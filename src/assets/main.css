@@ -1,0 +1,78 @@
+:root {
+  --bg-color: #f0f4f8; /* Был #f4f7f6 */
+  --card-color: #ffffff;
+  --primary-color: #3b82f6; /* Был #42b883 (Vue Green) */
+  --primary-hover: #2563eb;
+  --secondary-color: #1f2937; /* Был #35495e (Vue Dark) */
+  --text-color: #334155;
+  --text-light: #64748b;
+  --border-color: #e2e8f0;
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  --border-radius: 12px;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+  Helvetica, Arial, sans-serif;
+  /* УБИРАЕМ градиент.
+    Фон теперь - это наш <canvas> поверх этого цвета.
+  */
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  margin: 0;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* УБИРАЕМ стили для #app, так как мы
+  перенесли их в #app-wrapper в App.vue
+*/
+/* #app {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+*/
+
+/* ... (все остальные стили .btn, .form-input и т.д. остаются) ... */
+.btn {
+  display: inline-block;
+  border: none;
+  border-radius: 8px;
+  padding: 0.75em 1.5em;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+.btn-primary {
+  background-color: var(--primary-color);
+  color: white;
+}
+.btn-primary:hover {
+  background-color: var(--primary-hover);
+}
+.btn-secondary {
+  background-color: var(--card-color);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+}
+.btn-secondary:hover {
+  background-color: #f8fafc;
+}
+.form-input {
+  width: 100%;
+  padding: 0.75em;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 1rem;
+  box-sizing: border-box; /* Важно для padding */
+  background-color: #f8fafc;
+  color: var(--text-color);
+}
+.form-input:focus {
+  outline: 2px solid var(--primary-color);
+  border-color: transparent;
+  background-color: #fff;
+}
