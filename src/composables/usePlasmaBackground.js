@@ -1,11 +1,9 @@
 // src/composables/usePlasmaBackground.js
 
 import { ref, onMounted, onUnmounted } from 'vue'
-// 1. ОСТАВЛЯЕМ этот импорт - он правильный
 import * as ogl from 'ogl'
 
 // --- 1. Вершинный шейдер (Vertex Shader) ---
-// (без изменений)
 const vertexShader = `
   attribute vec2 uv;
   attribute vec2 position;
@@ -17,7 +15,6 @@ const vertexShader = `
 `
 
 // --- 2. Фрагментный шейдер (Fragment Shader) ---
-// (без изменений, рабочая версия)
 const fragmentShader = `
   precision highp float;
   varying vec2 vUv;
@@ -25,12 +22,12 @@ const fragmentShader = `
   uniform vec2 u_mouse;
   uniform vec2 u_resolution;
 
-  // --- Наша палитра (из main.css) ---
-  const vec3 color1 = vec3(0.23, 0.51, 0.96);
-  const vec3 color2 = vec3(0.12, 0.16, 0.21);
-  const vec3 color3 = vec3(0.94, 0.96, 0.98);
+  // --- Палитра цветов ---
+  const vec3 color1 = vec3(0.23, 0.51, 0.96); // Синий
+  const vec3 color2 = vec3(0.12, 0.16, 0.21); // Темный
+  const vec3 color3 = vec3(0.94, 0.96, 0.98); // Светлый
 
-  // --- Новая, простая функция плазмы ---
+  // --- Функция плазмы ---
   float plasma(vec2 uv) {
     float c = 0.0;
     c += sin(uv.x * 4.0 + u_time);
@@ -40,7 +37,6 @@ const fragmentShader = `
     return c / 4.0;
   }
 
-  // --- Основная функция ---
   void main() {
     vec2 uv = (vUv - 0.5) * vec2(u_resolution.x / u_resolution.y, 1.0);
     vec2 mouse = (u_mouse - 0.5) * vec2(u_resolution.x / u_resolution.y, 1.0);
@@ -76,28 +72,57 @@ export function usePlasmaBackground() {
 
   // --- Инициализация ---
   const init = (canvas) => {
-    renderer = new ogl.Renderer({ canvas, dpr: window.devicePixelRatio || 1 })
-    renderer.setSize(window.innerWidth, window.innerHeight)
+    try {
+      const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl')
 
-    // 2. ВОЗВРАЩАЕМСЯ К ЭТОМУ КОДУ
-    // 'ogl.Triangle' - это специальный класс, который УЖЕ
-    // содержит 'position' и 'uv'. Мой 'new ogl.Geometry' был не нужен.
-    const geometry = new ogl.Triangle(renderer.gl)
+      if (!gl) {
+        console.error('WebGL не поддерживается')
+        return false
+      }
 
-    program = new ogl.Program(renderer.gl, {
-      vertex: vertexShader,
-      fragment: fragmentShader,
-      uniforms,
-    })
+      renderer = new ogl.Renderer({
+        canvas,
+        dpr: window.devicePixelRatio || 1,
+        alpha: false
+      })
 
-    mesh = new ogl.Mesh(renderer.gl, { geometry, program })
+      const { gl: rendererGl } = renderer
+      renderer.setSize(window.innerWidth, window.innerHeight)
+
+      // Создаем простую геометрию fullscreen quad
+      const geometry = new ogl.Geometry(rendererGl, {
+        position: {
+          size: 2,
+          data: new Float32Array([-1, -1, 3, -1, -1, 3])
+        },
+        uv: {
+          size: 2,
+          data: new Float32Array([0, 0, 2, 0, 0, 2])
+        }
+      })
+
+      program = new ogl.Program(rendererGl, {
+        vertex: vertexShader,
+        fragment: fragmentShader,
+        uniforms,
+      })
+
+      mesh = new ogl.Mesh(rendererGl, { geometry, program })
+
+      return true
+    } catch (e) {
+      console.error("Ошибка инициализации WebGL:", e)
+      return false
+    }
   }
 
   // --- Цикл Анимации ---
   const animate = (time) => {
     animationFrameId = requestAnimationFrame(animate)
     uniforms.u_time.value = time * 0.0003
-    renderer.render({ mesh })
+    if (renderer && mesh) {
+      renderer.render({ scene: mesh })
+    }
   }
 
   // --- Обработчики ---
@@ -117,19 +142,19 @@ export function usePlasmaBackground() {
   // --- Хуки Жизненного Цикла ---
   onMounted(() => {
     if (canvasRef.value) {
-      try {
-        init(canvasRef.value)
+      const success = init(canvasRef.value)
+      if (success) {
         animate(0)
         window.addEventListener('resize', handleResize)
         window.addEventListener('mousemove', handleMouseMove)
-      } catch (e) {
-        console.error("Ошибка инициализации WebGL:", e)
       }
     }
   })
 
   onUnmounted(() => {
-    cancelAnimationFrame(animationFrameId)
+    if (animationFrameId) {
+      cancelAnimationFrame(animationFrameId)
+    }
     window.removeEventListener('resize', handleResize)
     window.removeEventListener('mousemove', handleMouseMove)
   })

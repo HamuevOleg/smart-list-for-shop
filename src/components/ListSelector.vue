@@ -1,11 +1,17 @@
 <template>
   <div class="list-selector-container">
-    <h1 class="title">My lists of purchases</h1>
+    <div class="header-section">
+      <h1 class="title">Мои списки покупок</h1>
+      <p class="subtitle">Управляйте своими списками и экономьте время</p>
+    </div>
+
     <div class="list-grid">
       <div class="list-card create-new" @click="startCreating">
         <template v-if="!isCreating">
-          <span class="plus-icon">+</span>
-          <span>Create a list</span>
+          <div class="card-icon">
+            <span class="plus-icon">+</span>
+          </div>
+          <span class="card-text">Создать список</span>
         </template>
         <template v-else>
           <form
@@ -16,7 +22,7 @@
             <input
               type="text"
               v-model="newListName"
-              placeholder="Name of a list ..."
+              placeholder="Название списка..."
               class="form-input"
               ref="createInput"
               @blur="isCreating = false"
@@ -26,7 +32,7 @@
               class="btn btn-primary"
               @mousedown.prevent
             >
-              Create
+              Создать
             </button>
           </form>
         </template>
@@ -38,8 +44,20 @@
         :key="list.id"
         @click="store.selectList(list.id)"
       >
+        <div class="card-icon">
+          <span>🛒</span>
+        </div>
         <span class="list-name">{{ list.name }}</span>
-        <span class="list-meta">{{ list.items.length }} товар(а)</span>
+        <div class="list-stats">
+          <span class="stat-item">
+            <span class="stat-icon">📦</span>
+            {{ list.items.length }} товар(ов)
+          </span>
+          <span class="stat-item" v-if="list.items.some(i => i.completed)">
+            <span class="stat-icon">✓</span>
+            {{ list.items.filter(i => i.completed).length }} куплено
+          </span>
+        </div>
       </div>
     </div>
   </div>
@@ -55,11 +73,8 @@ const newListName = ref('')
 const createInput = ref(null)
 
 const startCreating = async () => {
-  // Проверяем, чтобы не сработать, если форма уже открыта
   if (isCreating.value) return
-
   isCreating.value = true
-  // Фокусируемся на инпуте, когда он появится
   await nextTick()
   createInput.value?.focus()
 }
@@ -72,62 +87,196 @@ const handleCreate = () => {
 </script>
 
 <style scoped>
+.list-selector-container {
+  width: 100%;
+}
+
+.header-section {
+  text-align: center;
+  margin-bottom: 3rem;
+  animation: fadeInDown 0.6s ease-out;
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .title {
   color: var(--secondary-color);
-  text-align: center;
-  margin-bottom: 2rem;
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+  font-weight: 700;
 }
+
+.subtitle {
+  color: var(--text-light);
+  font-size: 1.1rem;
+  margin: 0;
+}
+
 .list-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 2rem;
+  animation: fadeIn 0.8s ease-out 0.2s backwards;
 }
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 .list-card {
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  height: 150px;
-  padding: 1rem;
+  min-height: 200px;
+  padding: 2rem 1.5rem;
   background: var(--card-color);
-  border-radius: var(--border-radius);
-  box-shadow: var(--shadow);
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   cursor: pointer;
-  transition: all 0.2s ease;
-  border: 1px solid var(--border-color);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 2px solid transparent;
+  position: relative;
+  overflow: hidden;
 }
+
+.list-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--primary-color), #60a5fa);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.list-card:hover::before {
+  opacity: 1;
+}
+
 .list-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.07);
-}
-.list-name {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: var(--secondary-color);
-  text-align: center;
-}
-.list-meta {
-  font-size: 0.9rem;
-  color: var(--text-light);
-  margin-top: 0.5rem;
-}
-.create-new {
-  border: 2px dashed var(--border-color);
-  color: var(--text-light);
-}
-.create-new:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 35px rgba(59, 130, 246, 0.15);
   border-color: var(--primary-color);
-  color: var(--primary-color);
 }
+
+.card-icon {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  transition: all 0.3s ease;
+}
+
+.list-card:hover .card-icon {
+  transform: scale(1.1) rotate(5deg);
+  background: linear-gradient(135deg, var(--primary-color) 0%, #60a5fa 100%);
+}
+
+.list-card:hover .card-icon span {
+  filter: brightness(0) invert(1);
+}
+
 .plus-icon {
   font-size: 2.5rem;
   line-height: 1;
-  margin-bottom: 0.5rem;
+  color: var(--primary-color);
+  font-weight: 300;
 }
+
+.card-text {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-light);
+}
+
+.list-name {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--secondary-color);
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.list-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+  margin-top: auto;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--text-light);
+  padding: 0.5rem;
+  background: var(--bg-color);
+  border-radius: 8px;
+  justify-content: center;
+}
+
+.stat-icon {
+  font-size: 1rem;
+}
+
+.create-new {
+  border: 2px dashed #cbd5e1;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+.create-new:hover {
+  border-color: var(--primary-color);
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+}
+
+.create-new .card-text {
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
 .create-form {
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 1rem;
+}
+
+.create-form .form-input {
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .list-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .title {
+    font-size: 2rem;
+  }
 }
 </style>
