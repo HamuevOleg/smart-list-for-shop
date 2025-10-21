@@ -31,7 +31,7 @@
 import { storeToRefs } from 'pinia'
 import { useListStore } from '@/stores/listStore'
 // 3. ИЗМЕНЕНИЕ: Импортируем 'usePlasmaBackground'
-import { usePlasmaBackground } from '@/composables/usePlasmaBackground'
+import { useGalaxyBackground } from '@/composables/useGalaxyBackground'
 
 // Импорты компонентов
 import ListSelector from './components/ListSelector.vue'
@@ -46,7 +46,21 @@ const store = useListStore()
 const { activeListId } = storeToRefs(store)
 
 // 4. ИЗМЕНЕНИЕ: Вызываем 'usePlasmaBackground'
-const { canvasRef } = usePlasmaBackground()
+const { canvasRef } = useGalaxyBackground({
+  focal: [0.5, 0.5],
+  rotation: [1.0, 0.0],
+  starSpeed: 0.5,
+  density: 1,
+  hueShift: 140,
+  speed: 1.0,
+  glowIntensity: 0.3,
+  saturation: 0.0,
+  mouseRepulsion: true,
+  repulsionStrength: 2,
+  twinkleIntensity: 0.3,
+  rotationSpeed: 0.1,
+  transparent: true,
+})
 </script>
 
 <style>
