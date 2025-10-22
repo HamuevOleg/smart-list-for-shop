@@ -1,5 +1,5 @@
 :root {
-  --bg-color: #f0f4f8; /* Был #f4f7f6 */
+  --bg-color: #000000; /* Был #f4f7f6 */
   --card-color: #ffffff;
   --primary-color: #3b82f6; /* Был #42b883 (Vue Green) */
   --primary-hover: #2563eb;
