@@ -46,6 +46,7 @@ export const useListStore = defineStore('list', () => {
   const isShareModalOpen = ref(false)
   const editingItem = ref(null)
   const isAddItemFormVisible = ref(false) // Для скрытия/показа формы
+  const isTotalsSidebarOpen = ref(false)
 
   // --- GETTERS (Геттеры) ---
 
@@ -104,6 +105,13 @@ export const useListStore = defineStore('list', () => {
 
   // --- ACTIONS (Действия) ---
 
+
+  const toggleTotalsSidebar = () => {
+    isTotalsSidebarOpen.value = !isTotalsSidebarOpen.value
+  }
+  const closeTotalsSidebar = () => {
+    isTotalsSidebarOpen.value = false
+  }
   // 7. Действия для управления списками
   const selectList = (id) => {
     activeListId.value = id
@@ -193,5 +201,8 @@ export const useListStore = defineStore('list', () => {
     cancelEdit,
     showAddItemForm,
     hideAddItemForm,
+    isTotalsSidebarOpen,
+    toggleTotalsSidebar,
+    closeTotalsSidebar,
   }
 })

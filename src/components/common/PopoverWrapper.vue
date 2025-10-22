@@ -1,5 +1,5 @@
 <template>
-  <div classclass="popover-wrapper" ref="wrapperRef">
+  <div class="popover-wrapper" ref="wrapperRef">`
     <div @click="toggle">
       <slot name="trigger"></slot>
     </div>

@@ -1,13 +1,23 @@
 :root {
-  --bg-color: #000000; /* Был #f4f7f6 */
-  --card-color: #ffffff;
-  --primary-color: #3b82f6; /* Был #42b883 (Vue Green) */
-  --primary-hover: #2563eb;
-  --secondary-color: #1f2937; /* Был #35495e (Vue Dark) */
-  --text-color: #334155;
-  --text-light: #64748b;
-  --border-color: #e2e8f0;
-  --shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  /* 1. Фоны */
+  --bg-color: #060010;          /* Твой фон (очень темный фиолетовый) */
+  --card-color: #1A1A2E;        /* Фон блоков (темный индиго) */
+  --secondary-color: #2A2A4E;    /* Фон карточек (чуть светлее индиго) */
+  --bg-surface-hover: #000059;  /* Наведение */
+  --bg-input: #ff0000;          /* Фон для input-полей */
+
+  /* 2. Акцент (Электрический Циан) */
+  --primary-color: #0b0066;    /* Яркий неон */
+  --primary-hover: #010534;    /* Еще ярче при наведении */
+  --bg-accent-light: rgba(0, 240, 255, 0.1); /* Легкая подсветка для active */
+
+  /* 3. Текст (САМОЕ ВАЖНОЕ) */
+  --text-color: #7d7d7d;        /* Основной СВЕТЛЫЙ текст (читабельный) */
+  --text-light: #8B8BBE;      /* Второстепенный (серо-лиловый) */
+
+  /* 4. Границы и тени */
+  --border-color: #333355;      /* Темная лилово-серая граница */
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   --border-radius: 12px;
 }
 
@@ -17,7 +27,7 @@ body {
   /* УБИРАЕМ градиент.
     Фон теперь - это наш <canvas> поверх этого цвета.
   */
-  background-color: var(--bg-color);
+  background-color: #060010;
   color: var(--text-color);
   margin: 0;
   line-height: 1.6;

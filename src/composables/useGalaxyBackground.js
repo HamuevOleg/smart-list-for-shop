@@ -40,13 +40,13 @@ varying vec2 vUv;
 #define MAT45 mat2(0.7071, -0.7071, 0.7071, 0.7071)
 #define PERIOD 3.0
 
-#define BG_COLOR_CENTER vec3(0.02, 0.02, 0.05)
-#define BG_COLOR_MID vec3(0.05, 0.05, 0.15)
-#define BG_COLOR_EDGE vec3(0.08, 0.08, 0.25)
+#define BG_COLOR_CENTER vec3(0.02,0.02,0.02)
+#define BG_COLOR_MID vec3(0.05, 0.05, 0.05)
+#define BG_COLOR_EDGE vec3(0.08, 0.08, 0.08)
 
-#define STAR_COLOR_HOT vec3(0.2, 0.8, 1.0)
-#define STAR_COLOR_WARM vec3(1.0, 0.8, 0.2)
-#define STAR_COLOR_COOL vec3(0.5, 0.2, 1.0)
+#define STAR_COLOR_HOT  vec3(1, 1, 1)
+#define STAR_COLOR_WARM vec3(1, 1, 1)
+#define STAR_COLOR_COOL vec3(1, 1, 1)
 
 float Hash21(vec2 p) {
   p = fract(p * vec2(123.34, 456.21));
