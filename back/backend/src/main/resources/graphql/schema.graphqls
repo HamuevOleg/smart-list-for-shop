@@ -1,0 +1,64 @@
+#basic types of data
+type ShoppingItem {
+     id          : ID!
+     name        : String!
+     quantity    : Float
+     unit        : String
+     category    : String
+     dueDate     : String
+     priceStore1 : Float
+     priceStore2 : Float
+     userPrice   : Float
+     completed   : Boolean!
+}
+
+type ShoppingList {
+     id    : ID!
+     name  : String!
+     items : [ShoppingItem]!
+}
+
+# input types
+input AddItemInput {
+      name       : String!
+      quantity   : Float
+      unit       : String
+      category   : String
+      dueDate    : String
+      comment    : String
+      priceStore1: Float
+      priceStore2: Float
+      userPrice  : Float
+}
+
+input UpdateItemInput {
+    name: String
+    quantity: Float
+    unit: String
+    category: String
+    dueDate: String
+    comment: String
+    priceStore1: Float
+    priceStore2: Float
+    userPrice: Float
+}
+
+#query
+type Query {
+    allLists: [ShoppingList]!
+    listById(id: ID!): ShoppingList
+}
+
+#mutation
+type Mutation {
+    createList(name: String!): ShoppingList!
+    addItem(listId: ID!, itemInput: AddItemInput!): ShoppingItem!
+    updateItem(itemId: ID!, itemInput: UpdateItemInput!): ShoppingItem!
+    removeItem(listId: ID!, itemId: ID!): Boolean!
+    toggleItem(listId: ID!, itemId: ID!, completed: Boolean!): ShoppingItem!
+}
+
+#subscription(for REAL-TIME updates)
+type Subscription {
+    listUpdated(listId: ID!): ShoppingList
+}

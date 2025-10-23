@@ -1,24 +1,20 @@
 :root {
-  /* 1. Фоны */
-  --bg-color: #060010;          /* Твой фон (очень темный фиолетовый) */
-  --card-color: #1A1A2E;        /* Фон блоков (темный индиго) */
-  --secondary-color: #2A2A4E;    /* Фон карточек (чуть светлее индиго) */
-  --bg-surface-hover: #000059;  /* Наведение */
-  --bg-input: #ff0000;          /* Фон для input-полей */
+  --bg-color: #060010;          /* Остается */
+  --card-color: #1a0f1f;
+  --secondary-color: #2e1a3d;
+  --bg-surface-hover: #3d244d;
+  --bg-input: #1a0f28;
 
-  /* 2. Акцент (Электрический Циан) */
-  --primary-color: #0b0066;    /* Яркий неон */
-  --primary-hover: #010534;    /* Еще ярче при наведении */
-  --bg-accent-light: rgba(0, 240, 255, 0.1); /* Легкая подсветка для active */
+  --primary-color: #ff3366;     /* Неон-красный */
+  --primary-hover: #ff5577;
 
-  /* 3. Текст (САМОЕ ВАЖНОЕ) */
-  --text-color: #7d7d7d;        /* Основной СВЕТЛЫЙ текст (читабельный) */
-  --text-light: #8B8BBE;      /* Второстепенный (серо-лиловый) */
+  --text-color: #f0e0ff;
+  --text-light: #c0a0d0;
 
-  /* 4. Границы и тени */
-  --border-color: #333355;      /* Темная лилово-серая граница */
-  --shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  --border-radius: 12px;
+  --border-color: #5a2f6a;
+
+  --border-radius: 1  0px;
+  --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 body {
