@@ -1,34 +1,36 @@
-#basic types of data
+# basic types of data
 type ShoppingItem {
-     id          : ID!
-     name        : String!
-     quantity    : Float
-     unit        : String
-     category    : String
-     dueDate     : String
-     priceStore1 : Float
-     priceStore2 : Float
-     userPrice   : Float
-     completed   : Boolean!
+    id          : ID!
+    name        : String!
+    quantity    : Float
+    unit        : String
+    category    : String
+    dueDate     : String
+    comment     : String
+    priceStore1 : Float
+    priceStore2 : Float
+    userPrice   : Float
+    completed   : Boolean!
+    imageUrl    : String
 }
 
 type ShoppingList {
-     id    : ID!
-     name  : String!
-     items : [ShoppingItem]!
+    id    : ID!
+    name  : String!
+    items : [ShoppingItem]!
 }
 
 # input types
 input AddItemInput {
-      name       : String!
-      quantity   : Float
-      unit       : String
-      category   : String
-      dueDate    : String
-      comment    : String
-      priceStore1: Float
-      priceStore2: Float
-      userPrice  : Float
+    name       : String!
+    quantity   : Float
+    unit       : String
+    category   : String
+    dueDate    : String
+    comment    : String
+    priceStore1: Float
+    priceStore2: Float
+    userPrice  : Float
 }
 
 input UpdateItemInput {
@@ -41,19 +43,21 @@ input UpdateItemInput {
     priceStore1: Float
     priceStore2: Float
     userPrice: Float
+    imageUrl: String
 }
 
 #query
 type Query {
     allLists: [ShoppingList]!
     listById(id: ID!): ShoppingList
+    searchImages(query: String!): [String]!
 }
 
 #mutation
 type Mutation {
     createList(name: String!): ShoppingList!
     addItem(listId: ID!, itemInput: AddItemInput!): ShoppingItem!
-    updateItem(itemId: ID!, itemInput: UpdateItemInput!): ShoppingItem!
+    updateItem(listId: ID!, itemId: ID!, itemInput: UpdateItemInput!): ShoppingItem!
     removeItem(listId: ID!, itemId: ID!): Boolean!
     toggleItem(listId: ID!, itemId: ID!, completed: Boolean!): ShoppingItem!
 }

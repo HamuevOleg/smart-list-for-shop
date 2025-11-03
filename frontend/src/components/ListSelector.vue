@@ -25,7 +25,6 @@
               placeholder="Название списка..."
               class="form-input"
               ref="createInput"
-              @blur="isCreating = false"
             />
             <button
               type="submit"
@@ -64,13 +63,20 @@
 </template>
 
 <script setup>
-import { ref, nextTick } from 'vue'
+// 1. Импортируем onMounted
+import { ref, nextTick, onMounted } from 'vue'
 import { useListStore } from '@/stores/listStore'
 
 const store = useListStore()
 const isCreating = ref(false)
 const newListName = ref('')
 const createInput = ref(null)
+
+// 2. Вызываем fetchLists() при загрузке компонента,
+// чтобы получить списки из MongoDB
+onMounted(() => {
+  store.fetchLists()
+})
 
 const startCreating = async () => {
   if (isCreating.value) return
@@ -79,14 +85,24 @@ const startCreating = async () => {
   createInput.value?.focus()
 }
 
-const handleCreate = () => {
-  store.createList(newListName.value)
+// 3. Обновляем handleCreate, чтобы он был async
+// и ждал ответа сервера перед сбросом полей
+const handleCreate = async () => {
+  // Не даем создать список с пустым именем
+  if (!newListName.value.trim()) {
+    isCreating.value = false
+    return
+  }
+
+  await store.createList(newListName.value)
+
   newListName.value = ''
   isCreating.value = false
 }
 </script>
 
 <style scoped>
+/* Стили остаются без изменений */
 .list-selector-container {
   width: 100%;
 }

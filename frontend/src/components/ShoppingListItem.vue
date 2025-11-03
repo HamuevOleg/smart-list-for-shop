@@ -98,19 +98,13 @@ const hasPrices = computed(() => {
 */
 
 .list-item-card {
+  border-radius: 20px;
   position: relative; /* Для .item-controls */
   background: var(--secondary-color); /* Темно-синий */
   color: #e2e8f0; /* Светлый текст */
   padding: 1.25rem;
-  border-radius: var(--border-radius);
   box-shadow: var(--shadow);
 
-  /* Ключевой момент:
-    transition срабатывает, когда мышь уходит (onMouseLeave),
-    и 'transform' плавно возвращается в 'translate(0,0)'.
-    Когда мышь движется, :style напрямую меняет 'transform'
-    БЫСТРЕЕ, чем transition, создавая эффект "прилипания".
-  */
   transition: transform 0.3s ease-out;
 }
 
