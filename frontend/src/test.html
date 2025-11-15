@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShopList - Finance Tracking & Smart Shopping</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #ff3366;
+            --primary-hover: #ff5577;
+            --secondary: #60a5fa;
+            --accent: #34d399;
+        }
+
+        /* Light Theme (Default) */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            --bg: #ffffff;
+            --bg-secondary: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --shadow: rgba(0, 0, 0, 0.1);
+            background: var(--bg);
+            color: var(--text);
+            overflow-x: hidden;
+            transition: all 0.3s ease;
+        }
+
+        /* Dark Theme */
+        body.dark-theme {
+            --bg: #060010;
+            --bg-secondary: #1a0f1f;
+            --card-bg: #1a0f1f;
+            --text: #f0e0ff;
+            --text-muted: #c0a0d0;
+            --border: #5a2f6a;
+            --shadow: rgba(255, 51, 102, 0.2);
+        }
+
+        #canvas-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        body.dark-theme #canvas-bg {
+            opacity: 1;
+        }
+
+        .content {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Header */
+        header {
+            padding: 1.5rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.8);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        body.dark-theme header {
+            background: rgba(6, 0, 16, 0.8);
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #ff3366, #60a5fa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .theme-toggle {
+            background: var(--bg-secondary);
+            border: 2px solid var(--border);
+            border-radius: 50px;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.1);
+            border-color: var(--primary);
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 50px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--text);
+            border: 2px solid var(--border);
+        }
+
+        .btn-ghost:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 8px 25px rgba(255, 51, 102, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 35px rgba(255, 51, 102, 0.4);
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 4rem 2rem;
+        }
+
+        .hero h1 {
+            font-size: clamp(2.5rem, 8vw, 5rem);
+            font-weight: 800;
+            margin-bottom: 1.5rem;
+            line-height: 1.1;
+            background: linear-gradient(135deg, var(--text), var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        .hero p {
+            font-size: clamp(1rem, 3vw, 1.3rem);
+            color: var(--text-muted);
+            max-width: 600px;
+            margin-bottom: 2.5rem;
+            animation: fadeInUp 0.8s ease-out 0.2s backwards;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            animation: fadeInUp 0.8s ease-out 0.4s backwards;
+        }
+
+        .btn-large {
+            padding: 1rem 2.5rem;
+            font-size: 1.1rem;
+        }
+
+        /* AI Demo Section */
+        .ai-demo {
+            padding: 6rem 2rem;
+            background: var(--bg-secondary);
+        }
+
+        .ai-demo-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .ai-demo h2 {
+            font-size: clamp(2rem, 5vw, 3rem);
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .ai-demo p {
+            color: var(--text-muted);
+            font-size: 1.2rem;
+            margin-bottom: 3rem;
+        }
+
+        .demo-box {
+            background: var(--card-bg);
+            border: 2px solid var(--border);
+            border-radius: 20px;
+            padding: 3rem;
+            box-shadow: 0 20px 60px var(--shadow);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .demo-input-wrapper {
+            position: relative;
+            margin-bottom: 2rem;
+        }
+
+        .demo-input {
+            width: 100%;
+            padding: 1rem 1.5rem;
+            font-size: 1.2rem;
+            border: 2px solid var(--border);
+            border-radius: 15px;
+            background: var(--bg);
+            color: var(--text);
+            transition: all 0.3s ease;
+        }
+
+        .demo-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(255, 51, 102, 0.1);
+        }
+
+        .ai-suggestion {
+            margin-top: 2rem;
+            padding: 2rem;
+            background: linear-gradient(135deg, rgba(255, 51, 102, 0.1), rgba(96, 165, 250, 0.1));
+            border-radius: 15px;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s ease;
+        }
+
+        .ai-suggestion.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .ai-result {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .ai-result img {
+            width: 80px;
+            height: 80px;
+            border-radius: 15px;
+            object-fit: cover;
+            box-shadow: 0 4px 15px var(--shadow);
+        }
+
+        .ai-result-text {
+            text-align: left;
+            flex: 1;
+        }
+
+        .ai-result-text h4 {
+            font-size: 1.3rem;
+            margin-bottom: 0.5rem;
+            color: var(--text);
+        }
+
+        .ai-result-text p {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin: 0;
+        }
+
+        .ai-features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .ai-feature-tag {
+            padding: 0.75rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        /* Finance Section */
+        .finance-section {
+            padding: 6rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .finance-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .finance-card {
+            background: var(--card-bg);
+            border: 2px solid var(--border);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 10px 40px var(--shadow);
+            transition: all 0.4s ease;
+        }
+
+        .finance-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 60px var(--shadow);
+            border-color: var(--primary);
+        }
+
+        .chart-placeholder {
+            width: 100%;
+            height: 200px;
+            background: linear-gradient(135deg, rgba(255, 51, 102, 0.1), rgba(96, 165, 250, 0.1));
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .chart-bars {
+            display: flex;
+            align-items: flex-end;
+            gap: 10px;
+            height: 150px;
+        }
+
+        .chart-bar {
+            width: 30px;
+            background: linear-gradient(180deg, var(--primary), var(--secondary));
+            border-radius: 5px 5px 0 0;
+            animation: growBar 1s ease-out forwards;
+            transform-origin: bottom;
+        }
+
+        @keyframes growBar {
+            from { transform: scaleY(0); }
+            to { transform: scaleY(1); }
+        }
+
+        /* Pricing Section */
+        .pricing {
+            padding: 6rem 2rem;
+            background: var(--bg-secondary);
+        }
+
+        .pricing h2 {
+            text-align: center;
+            font-size: clamp(2rem, 5vw, 3rem);
+            margin-bottom: 3rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .pricing-card {
+            background: var(--card-bg);
+            border: 2px solid var(--border);
+            border-radius: 25px;
+            padding: 3rem 2rem;
+            text-align: center;
+            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .pricing-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            transform: scaleX(0);
+            transition: transform 0.4s ease;
+        }
+
+        .pricing-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .pricing-card:hover {
+            transform: translateY(-15px);
+            box-shadow: 0 25px 70px var(--shadow);
+            border-color: var(--primary);
+        }
+
+        .pricing-card.featured {
+            border-color: var(--primary);
+            box-shadow: 0 15px 50px var(--shadow);
+            transform: scale(1.05);
+        }
+
+        .pricing-badge {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: var(--primary);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .pricing-card h3 {
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+            color: var(--text);
+        }
+
+        .pricing-price {
+            font-size: 3rem;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .pricing-price span {
+            font-size: 1.2rem;
+            color: var(--text-muted);
+        }
+
+        .pricing-features {
+            list-style: none;
+            margin: 2rem 0;
+            text-align: left;
+        }
+
+        .pricing-features li {
+            padding: 0.75rem 0;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .pricing-features li::before {
+            content: '✓';
+            color: var(--accent);
+            font-weight: 700;
+            font-size: 1.2rem;
+        }
+
+        /* Features Section */
+        .features {
+            padding: 6rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .features h2 {
+            text-align: center;
+            font-size: clamp(2rem, 5vw, 3rem);
+            margin-bottom: 4rem;
+            background: linear-gradient(135deg, var(--text), var(--primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .feature-card {
+            background: var(--card-bg);
+            border: 2px solid var(--border);
+            border-radius: 20px;
+            padding: 2rem;
+            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+            cursor: pointer;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            border-color: var(--primary);
+            box-shadow: 0 20px 60px var(--shadow);
+        }
+
+        .feature-card .icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            display: inline-block;
+        }
+
+        .feature-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 0.75rem;
+            color: var(--text);
+        }
+
+        .feature-card p {
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        /* CTA Section */
+        .cta {
+            padding: 6rem 2rem;
+            text-align: center;
+            background: linear-gradient(180deg, transparent, rgba(255, 51, 102, 0.05));
+        }
+
+        .cta h2 {
+            font-size: clamp(2rem, 5vw, 3rem);
+            margin-bottom: 1.5rem;
+        }
+
+        .cta p {
+            font-size: 1.2rem;
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            border: 2px solid var(--border);
+            border-radius: 20px;
+            padding: 3rem;
+            max-width: 450px;
+            width: 90%;
+            position: relative;
+            animation: slideUp 0.4s ease;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 2rem;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .modal-content h2 {
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--bg);
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            color: var(--text);
+            font-size: 1rem;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(255, 51, 102, 0.1);
+        }
+
+        .divider {
+            text-align: center;
+            margin: 1.5rem 0;
+            color: var(--text-muted);
+            position: relative;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 40%;
+            height: 1px;
+            background: var(--border);
+        }
+
+        .divider::before { left: 0; }
+        .divider::after { right: 0; }
+
+        .social-login {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .btn-social {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            background: var(--bg);
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-social:hover {
+            background: var(--bg-secondary);
+            transform: translateY(-2px);
+            border-color: var(--primary);
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .features-grid, .pricing-grid, .finance-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .hero-buttons {
+                flex-direction: column;
+                width: 100%;
+                max-width: 300px;
+            }
+
+            .nav-buttons {
+                gap: 0.5rem;
+            }
+
+            .pricing-card.featured {
+                transform: scale(1);
+            }
+        }
+    </style>
+</head>
+<body>
+<canvas id="canvas-bg"></canvas>
+
+<div class="content">
+    <!-- Header -->
+    <header>
+        <div class="logo">🛒 ShopList</div>
+        <div class="nav-buttons">
+            <button class="theme-toggle" onclick="toggleTheme()" title="Toggle Theme">
+                <span id="theme-icon">🌙</span>
+            </button>
+            <button class="btn btn-ghost" onclick="openModal('login')">Sign In</button>
+            <button class="btn btn-primary" onclick="openModal('signup')">Get Started</button>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <h1>Finance Tracking &<br>Smart Shopping List</h1>
+        <p>AI-powered shopping assistant that helps you save money, track expenses, and never forget what you need.</p>
+        <div class="hero-buttons">
+            <button class="btn btn-primary btn-large" onclick="openModal('signup')">Start Free Trial</button>
+            <button class="btn btn-ghost btn-large">Watch Demo</button>
+        </div>
+    </section>
+
+    <!-- AI Demo Section -->
+    <section class="ai-demo">
+        <div class="ai-demo-container">
+            <h2>See AI in Action</h2>
+            <p>Type any item and watch the magic happen ✨</p>
+            <div class="demo-box">
+                <div class="demo-input-wrapper">
+                    <input
+                            type="text"
+                            class="demo-input"
+                            placeholder="Try typing 'bananas' or 'milk'..."
+                            id="aiInput"
+                            oninput="handleAIInput(this.value)"
+                    >
+                </div>
+                <div class="ai-suggestion" id="aiSuggestion">
+                    <div class="ai-result">
+                        <img id="aiImage" src="https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=200" alt="Product">
+                        <div class="ai-result-text">
+                            <h4 id="aiTitle">Bananas</h4>
+                            <p id="aiDesc">Fresh organic bananas • Best price at Store A: $2.99/kg</p>
+                        </div>
+                    </div>
+                    <div class="ai-features">
+                        <div class="ai-feature-tag">📊 Price tracked</div>
+                        <div class="ai-feature-tag">🏪 3 stores compared</div>
+                        <div class="ai-feature-tag">✨ AI categorized</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Finance Section -->
+    <section class="finance-section">
+        <h2 style="text-align: center; font-size: clamp(2rem, 5vw, 3rem); margin-bottom: 1rem;">Track Every Dollar</h2>
+        <p style="text-align: center; color: var(--text-muted); font-size: 1.2rem; margin-bottom: 3rem;">Beautiful visualizations that make finance management effortless</p>
+        <div class="finance-grid">
+            <div class="finance-card">
+                <div class="chart-placeholder">
+                    <div class="chart-bars">
+                        <div class="chart-bar" style="height: 60%;"></div>
+                        <div class="chart-bar" style="height: 85%;"></div>
+                        <div class="chart-bar" style="height: 45%;"></div>
+                        <div class="chart-bar" style="height: 95%;"></div>
+                        <div class="chart-bar" style="height: 70%;"></div>
+                    </div>
+                </div>
+                <h3>Weekly Spending</h3>
+                <p style="color: var(--text-muted);">Track your weekly expenses and identify spending patterns</p>
+            </div>
+            <div class="finance-card">
+                <div class="chart-placeholder">
+                    <div style="font-size: 3rem; font-weight: 800; color: var(--primary);">$234</div>
+                    <div style="color: var(--accent); font-size: 1.2rem; margin-top: 0.5rem;">↓ 12% saved this month</div>
+                </div>
+                <h3>Smart Savings</h3>
+                <p style="color: var(--text-muted);">AI finds the best deals and shows your savings in real-time</p>
+            </div>
+            <div class="finance-card">
+                <div class="chart-placeholder">
+                    <div style="font-size: 2rem;">🍎 30% • 🥛 25% • 🍞 20%</div>
+                </div>
+                <h3>Category Breakdown</h3>
+                <p style="color: var(--text-muted);">See where your money goes with beautiful category insights</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section class="pricing">
+        <h2>Choose Your Plan</h2>
+        <div class="pricing-grid">
+            <div class="pricing-card">
+                <h3>Free</h3>
+                <div class="pricing-price">$0<span>/month</span></div>
+                <p style="color: var(--text-muted); margin-bottom: 2rem;">Perfect for individuals</p>
+                <ul class="pricing-features">
+                    <li>Up to 3 shopping lists</li>
+                    <li>Basic price comparison</li>
+                    <li>Mobile app access</li>
+                    <li>Community support</li>
+                </ul>
+                <button class="btn btn-ghost" style="width: 100%;">Get Started</button>
+            </div>
+
+            <div class="pricing-card featured">
+                <div class="pricing-badge">Most Popular</div>
+                <h3>Pro</h3>
+                <div class="pricing-price">$9<span>/month</span></div>
+                <p style="color: var(--text-muted); margin-bottom: 2rem;">For power users</p>
+                <ul class="pricing-features">
+                    <li>Unlimited shopping lists</li>
+                    <li>AI-powered suggestions</li>
+                    <li>Advanced price tracking</li>
+                    <li>Finance analytics</li>
+                    <li>Share lists with family</li>
+                    <li>Priority support</li>
+                </ul>
+                <button class="btn btn-primary" style="width: 100%;">Start Free Trial</button>
+            </div>
+
+            <div class="pricing-card">
+                <h3>Family</h3>
+                <div class="pricing-price">$19<span>/month</span></div>
+                <p style="color: var(--text-muted); margin-bottom: 2rem;">Up to 6 members</p>
+                <ul class="pricing-features">
+                    <li>Everything in Pro</li>
+                    <li>6 family accounts</li>
+                    <li>Shared finance dashboard</li>
+                    <li>Bulk purchase optimizer</li>
+                    <li>Premium support</li>
+                    <li>Custom categories</li>
+                </ul>
+                <button class="btn btn-ghost" style="width: 100%;">Get Started</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features -->
+    <section class="features">
+        <h2>Everything you need</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="icon">🤖</div>
+                <h3>AI Recognition</h3>
+                <p>Type any item and AI instantly finds images, prices, and best deals across stores.</p>
+            </div>
+            <div class="feature-card">
+                <div class="icon">💸</div>
+                <h3>Smart Price Tracking</h3>
+                <p>Compare prices in real-time. We track 100+ stores to find you the best deals.</p>
+            </div>
+            <div class="feature-card">
+                <div class="icon">📊</div>
+                <h3>Finance Dashboard</h3>
+                <p>Beautiful charts and insights show exactly where your money goes.</p>
+            </div>
+            <div class="feature-card">
+                <div class="icon">🔄</div>
+                <h3>Real-time Sync</h3>
+                <p>Share lists with family. Updates appear instantly on everyone's device.</p>
+            </div>
+            <div class="feature-card">
+                <div class="icon">📱</div>
+                <h3>Mobile First</h3>
+                <p>Gorgeous apps for iOS and Android. Shop smarter on the go.</p>
+            </div>
+            <div class="feature-card">
+                <div class="icon">🔒</div>
+                <h3>Secure & Private</h3>
+                <p>Bank-level encryption. Your data is safe and never shared.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta">
+        <h2>Ready to save money?</h2>
+        <p>Join thousands of smart shoppers. Start your free trial today.</p>
+        <button class="btn btn-primary btn-large" onclick="openModal('signup')">Start Free Trial</button>
+    </section>
+</div>
+
+<!-- Login Modal -->
+<div id="loginModal" class="modal">
+    <div class="modal-content">
+        <button class="modal-close" onclick="closeModal('login')">&times;</button>
+        <h2>Welcome Back</h2>
+        <form onsubmit="event.preventDefault(); handleLogin()">
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" placeholder="you@example.com" required>
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" placeholder="••••••••" required>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Sign In</button>
+        </form>
+        <div class="divider">or</div>
+        <div class="social-login">
+            <button class="btn-social">
+                <span>🔵</span>
+                Continue with Google
+            </button>
+            <button class="btn-social">
+                <span>📘</span>
+                Continue with Facebook
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Signup Modal -->
+<div id="signupModal" class="modal">
+    <div class="modal-content">
+        <button class="modal-close" onclick="closeModal('signup')">&times;</button>
+        <h2>Create Account</h2>
+        <form onsubmit="event.preventDefault(); handleSignup()">
+            <div class="form-group">
+                <label>Name</label>
+                <input type="text" placeholder="John Doe" required>
+            </div>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" placeholder="you@example.com" required>
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" placeholder="••••••••" required>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Start Free Trial</button>
+        </form>
+        <div class="divider">or</div>
+        <div class="social-login">
+            <button class="btn-social">
+                <span>🔵</span>
+                Sign up with Google
+            </button>
+            <button class="btn-social">
+                <span>📘</span>
+                Sign up with Facebook
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Theme Toggle
+    let isDark = false;
+
+    function toggleTheme() {
+        isDark = !isDark;
+        document.body.classList.toggle('dark-theme');
+        document.getElementById('theme-icon').textContent = isDark ? '☀️' : '🌙';
+    }
+
+    // Galaxy Background (only visible in dark mode)
+    const canvas = document.getElementById('canvas-bg');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const stars = [];
+    const numStars = 200;
+
+    for (let i = 0; i < numStars; i++) {
+        stars.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            radius: Math.random() * 2,
+            speed: Math.random() * 0.5 + 0.1,
+            opacity: Math.random()
+        });
+    }
+
+    function drawStars() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#060010';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        stars.forEach(star => {
+            ctx.beginPath();
+            ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(255, 255, 255, ${star.opacity})`;
+            ctx.fill();
+
+            star.y += star.speed;
+            star.opacity = Math.sin(Date.now() * 0.001 + star.x) * 0.5 + 0.5;
+
+            if (star.y > canvas.height) {
+                star.y = 0;
+                star.x = Math.random() * canvas.width;
+            }
+        });
+
+        requestAnimationFrame(drawStars);
+    }
+
+    drawStars();
+
+    window.addEventListener('resize', () => {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    });
+
+    // AI Input Demo
+    const aiData = {
+        'banana': {
+            image: 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=200',
+            title: 'Bananas',
+            desc: 'Fresh organic bananas • Best price at Store A: $2.99/kg'
+        },
+        'milk': {
+            image: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=200',
+            title: 'Milk',
+            desc: 'Whole milk 1L • Best price at Store B: $1.49'
+        },
+        'apple': {
+            image: 'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=200',
+            title: 'Apples',
+            desc: 'Red delicious apples • Best price at Store C: $3.99/kg'
+        },
+        'bread': {
+            image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=200',
+            title: 'Bread',
+            desc: 'Fresh whole wheat bread • Best price at Store A: $2.49'
+        },
+        'cheese': {
+            image: 'https://images.unsplash.com/photo-1486297678162-eb2a19b0a32d?w=200',
+            title: 'Cheese',
+            desc: 'Cheddar cheese 200g • Best price at Store B: $4.99'
+        }
+    };
+
+    let typingTimer;
+
+    function handleAIInput(value) {
+        clearTimeout(typingTimer);
+
+        if (!value) {
+            document.getElementById('aiSuggestion').classList.remove('show');
+            return;
+        }
+
+        typingTimer = setTimeout(() => {
+            const searchTerm = value.toLowerCase().trim();
+            let matchedItem = null;
+
+            // Find matching item
+            for (let key in aiData) {
+                if (key.includes(searchTerm) || searchTerm.includes(key)) {
+                    matchedItem = aiData[key];
+                    break;
+                }
+            }
+
+            if (matchedItem) {
+                document.getElementById('aiImage').src = matchedItem.image;
+                document.getElementById('aiTitle').textContent = matchedItem.title;
+                document.getElementById('aiDesc').textContent = matchedItem.desc;
+                document.getElementById('aiSuggestion').classList.add('show');
+            } else {
+                // Generic response for unknown items
+                document.getElementById('aiImage').src = 'https://images.unsplash.com/photo-1534723452862-4c874018d66d?w=200';
+                document.getElementById('aiTitle').textContent = value.charAt(0).toUpperCase() + value.slice(1);
+                document.getElementById('aiDesc').textContent = `Searching for best prices... • AI is analyzing 50+ stores`;
+                document.getElementById('aiSuggestion').classList.add('show');
+            }
+        }, 500);
+    }
+
+    // Modal Functions
+    function openModal(type) {
+        const modalId = type === 'login' ? 'loginModal' : 'signupModal';
+        document.getElementById(modalId).classList.add('active');
+    }
+
+    function closeModal(type) {
+        const modalId = type === 'login' ? 'loginModal' : 'signupModal';
+        document.getElementById(modalId).classList.remove('active');
+    }
+
+    function handleLogin() {
+        alert('Login functionality - connect to your backend!');
+        closeModal('login');
+    }
+
+    function handleSignup() {
+        alert('Signup functionality - connect to your backend!');
+        closeModal('signup');
+    }
+
+    // Close modal on outside click
+    document.querySelectorAll('.modal').forEach(modal => {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.classList.remove('active');
+            }
+        });
+    });
+</script>
+</body>
+</html>
