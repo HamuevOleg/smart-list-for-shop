@@ -2,13 +2,13 @@
   <div class="modal-backdrop" v-if="store.isShareModalOpen" @click.self="close">
     <div class="modal-content">
       <button class="btn-close" @click="close">×</button>
-      <h2>Поделиться списком</h2>
-      <p>Отправьте эту ссылку друзьям, чтобы они присоединились к списку:</p>
+      <h2>Share the list</h2>
+      <p>Send this link to your friends so they can join the list:</p>
       <div class="share-link-wrapper">
         <input type="text" :value="fakeLink" readonly class="form-input" />
-        <button class="btn btn-primary" @click="copyLink">Копировать</button>
+        <button class="btn btn-primary" @click="copyLink">Copy</button>
       </div>
-      <p v-if="copied" class="copy-success">Скопировано!</p>
+      <p v-if="copied" class="copy-success">Copied!</p>
     </div>
   </div>
 </template>

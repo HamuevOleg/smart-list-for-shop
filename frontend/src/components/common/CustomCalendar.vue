@@ -16,7 +16,7 @@
         <span class="day-number">{{ day.date.getDate() }}</span>
       </div>
     </div>
-    <button type="button" class="btn btn-secondary btn-clear" @click="clearDate"> Очистить дату
+    <button type="button" class="btn btn-secondary btn-clear" @click="clearDate"> Clear Date
     </button>
   </div>
 </template>
@@ -40,7 +40,7 @@ viewDate.value.setDate(1) // Всегда начинаем с 1го числа
 const viewMonth = computed(() => viewDate.value.getMonth())
 const viewYear = computed(() => viewDate.value.getFullYear())
 
-const weekdays = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
+const weekdays = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
 
 const selectedDate = computed(() => {
   if (!props.modelValue) return null
@@ -132,13 +132,14 @@ const dayClasses = (day) => {
 
 // Название месяца на русском
 const monthName = computed(() => {
-  return viewDate.value.toLocaleString('ru-RU', { month: 'long' })
+  return viewDate.value.toLocaleString('en-EN', { month: 'long' })
 })
 </script>
 
 <style scoped>
 /* Стили остаются без изменений */
 .calendar {
+  border-radius: 200px;
   width: 100%;
 }
 .calendar-header {
@@ -158,9 +159,11 @@ const monthName = computed(() => {
   font-size: 1.2rem;
   cursor: pointer;
   padding: 0.5rem;
-  border-radius: 50%;
+  border-radius: 20px;
+  transition: all 0.3s ease;
 }
 .nav-btn:hover {
+  transition: all 0.3s ease ;
   background-color: var(--bg-color);
 }
 
@@ -180,6 +183,7 @@ const monthName = computed(() => {
 }
 
 .day {
+  color: #fff;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -210,7 +214,8 @@ const monthName = computed(() => {
 
 /* "Линия" / Рендж */
 .range-between {
-  background-color: #eff6ff; /* Светло-голубой */
+  background-color: #eff6ff;
+  color: #1a0f1f/* Светло-голубой */
 }
 .range-between.today, .range-between.selected {
   background-color: #dbeafe; /* Темнее голубой */

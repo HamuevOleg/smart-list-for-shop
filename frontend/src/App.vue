@@ -12,7 +12,7 @@
         <main>
           <div class="add-item-toggle" v-if="!store.isAddItemFormVisible">
             <button class="btn btn-primary" @click="store.showAddItemForm">
-              + Добавить товар
+              + Add item
             </button>
           </div>
 
@@ -25,6 +25,7 @@
 
       <ShareModal />
       <EditModal />
+      <ItemDetailModal />
     </div>
 
     <button
@@ -33,7 +34,7 @@
       @click="store.toggleTotalsSidebar"
       :class="{ hidden: isTotalsSidebarOpen }"
     >
-      <span>Итог:</span>
+      <span>Result:</span>
       <strong>{{ cheapestTotal }}</strong>
       <span>Lei</span>
     </button>
@@ -55,8 +56,8 @@ import AddItemForm from './components/AddItemForm.vue'
 import ShoppingList from './components/ShoppingList.vue'
 import ShareModal from './components/ShareModal.vue'
 import EditModal from './components/EditModal.vue'
-// import TotalFooter from './components/TotalFooter.vue' // <-- УДАЛЕН
 import TotalsSidebar from './components/TotalsSidebar.vue' // <-- ДОБАВЛЕН
+import ItemDetailModal from './components/ItemDetailModal.vue'
 
 const store = useListStore()
 // V СТРОКА ОБНОВЛЕНА V

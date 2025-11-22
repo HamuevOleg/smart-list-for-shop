@@ -1,28 +1,28 @@
+@import url('https://fonts.googleapis.com/css2?family=Kumbh+Sans:wght@100..900&display=swap');
+
 :root {
-  --bg-color: #060010;          /* Остается */
+  --bg-color: #ffffff;          /* Остается */
   --card-color: #1a0f1f;
-  --secondary-color: #2e1a3d;
+  --secondary-color: #ff3366;
+  --list-item-color: #2e1a3d;
   --bg-surface-hover: #3d244d;
   --bg-input: #1a0f28;
 
   --primary-color: #ff3366;     /* Неон-красный */
   --primary-hover: #ff5577;
 
-  --text-color: #f0e0ff;
+  --text-color: #ff3366;
   --text-light: #c0a0d0;
 
   --border-color: #5a2f6a;
 
-  --border-radius: 1  0px;
+  --border-radius: 10px;
   --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-  Helvetica, Arial, sans-serif;
-  /* УБИРАЕМ градиент.
-    Фон теперь - это наш <canvas> поверх этого цвета.
-  */
+  font-family: "Kumbh Sans", sans-serif;
+
   background-color: #060010;
   color: var(--text-color);
   margin: 0;
@@ -30,17 +30,6 @@ body {
   min-height: 100vh;
 }
 
-/* УБИРАЕМ стили для #app, так как мы
-  перенесли их в #app-wrapper в App.vue
-*/
-/* #app {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 2rem 1rem;
-}
-*/
-
-/* ... (все остальные стили .btn, .form-input и т.д. остаются) ... */
 .btn {
   display: inline-block;
   border: none;

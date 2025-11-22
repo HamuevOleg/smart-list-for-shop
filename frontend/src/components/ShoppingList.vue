@@ -5,7 +5,7 @@
       class="empty-list"
     >
       <p>📝</p>
-      Ваш список пока пуст. Добавьте первый товар!
+      Your list is currently empty. Add your first item!
     </div>
 
     <div

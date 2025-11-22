@@ -1,30 +1,26 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
-import { gplClient } from '@/api/gplClient' // <-- Наш клиент
+import { gplClient } from '@/api/gplClient'
 
 export const useListStore = defineStore('list', () => {
   // --- STATE (Состояние) ---
-
-  // 1. Списки теперь по умолчанию пустые и ждут загрузки
   const lists = ref([])
   const activeListId = ref(null)
-  const isLoading = ref(false) // <-- Добавим индикатор загрузки
+  const isLoading = ref(false)
 
-  // 3. Состояние UI (остается)
+  // --- Состояние UI ---
   const isShareModalOpen = ref(false)
-  const editingItem = ref(null)
+  const editingItem = ref(null) // Для модалки редактирования
+  const viewingItem = ref(null) // <-- ⭐ НОВОЕ СОСТОЯНИЕ (для модалки просмотра)
   const isAddItemFormVisible = ref(false)
   const isTotalsSidebarOpen = ref(false)
 
   // --- GETTERS (Геттеры) ---
-
-  // (Остаются без изменений, т.к. они просто читают state)
+  // (Без изменений)
   const activeList = computed(() => {
     return lists.value.find((list) => list.id === activeListId.value)
   })
-
   const groupedItems = computed(() => {
-    // ... (код геттера не меняется)
     if (!activeList.value) return {}
     const sorted = [...activeList.value.items].sort((a, b) => a.completed - b.completed)
     return sorted.reduce((acc, item) => {
@@ -34,11 +30,8 @@ export const useListStore = defineStore('list', () => {
       return acc
     }, {})
   })
-
   const totals = computed(() => {
-    // ... (код геттера не меняется)
     if (!activeList.value) return { store1: 0, store2: 0, user: 0, diff: 0 }
-    // ... (логика подсчета)
     let total1 = 0, total2 = 0, totalUser = 0;
     for (const item of activeList.value.items) {
       if (item.completed) continue;
@@ -65,9 +58,7 @@ export const useListStore = defineStore('list', () => {
   })
 
   // --- ACTIONS (Действия) ---
-  // (Вот здесь все меняется!)
-
-  // 1. НОВЫЙ ACTION: Загрузка списков с сервера
+  // (Все экшены работы с API (fetchLists, createList, addItem, etc.) остаются БЕЗ ИЗМЕНЕНИЙ)
   const fetchLists = async () => {
     isLoading.value = true
     const query = `
@@ -101,8 +92,6 @@ export const useListStore = defineStore('list', () => {
       isLoading.value = false
     }
   }
-
-  // 2. ИЗМЕНЕННЫЙ ACTION: Создание списка
   const createList = async (name) => {
     const query = `
       mutation($name: String!) {
@@ -115,58 +104,81 @@ export const useListStore = defineStore('list', () => {
     `
     try {
       const data = await gplClient(query, { name: name || 'Новый список' })
-      lists.value.push(data.createList) // Добавляем новый список в state
-      activeListId.value = data.createList.id // Сразу открываем его
+      lists.value.push(data.createList)
+      activeListId.value = data.createList.id
     } catch (e) {
       console.error('Не удалось создать список:', e)
     }
   }
-
-  // 3. ИЗМЕНЕННЫЙ ACTION: Добавление товара
   const addItem = async (item) => {
     if (!activeList.value) return
     const listId = activeList.value.id
-    const query = `
-      mutation($listId: ID!, $itemInput: AddItemInput!) {
-        addItem(listId: $listId, itemInput: $itemInput) {
-          id
-          name
-          quantity
-          unit
-          category
-          dueDate
-          comment
-          priceStore1
-          priceStore2
-          userPrice
-          completed
-          imageUrl
+    const { __typename, ...itemInput } = item
+
+    try {
+      // 1. СНАЧАЛА создаем товар БЕЗ картинки
+      const createQuery = `
+        mutation($listId: ID!, $itemInput: AddItemInput!) {
+          addItem(listId: $listId, itemInput: $itemInput) {
+            id name quantity unit category dueDate comment priceStore1 priceStore2 userPrice completed imageUrl
+          }
+        }
+      `
+      const { imageUrl, ...createInput } = itemInput
+      const createData = await gplClient(createQuery, { listId, itemInput: createInput })
+
+      let newItem = createData.addItem
+
+      // 2. ТЕПЕРЬ ищем картинку
+      if (newItem.name) {
+        console.log(`Ищем картинку для: ${newItem.name}`)
+        const searchQuery = `
+          query($query: String!) {
+            searchImages(query: $query)
+          }
+        `
+        const searchData = await gplClient(searchQuery, { query: newItem.name })
+
+        // 3. Если картинка найдена, ВЫЗЫВАЕМ UPDATE
+        if (searchData.searchImages && searchData.searchImages.length > 0) {
+          const foundImageUrl = searchData.searchImages[0]
+          console.log(`Нашли картинку, обновляем: ${foundImageUrl}`)
+
+          const updateInput = {
+            ...createInput,
+            imageUrl: foundImageUrl
+          }
+
+          const updateQuery = `
+            mutation($listId: ID!, $itemId: ID!, $itemInput: UpdateItemInput!) {
+              updateItem(listId: $listId, itemId: $itemId, itemInput: $itemInput) {
+                id name quantity unit category dueDate comment priceStore1 priceStore2 userPrice completed imageUrl
+              }
+            }
+          `
+          const updateData = await gplClient(updateQuery, {
+            listId: listId,
+            itemId: newItem.id,
+            itemInput: updateInput
+          })
+
+          newItem = updateData.updateItem
         }
       }
-    `
-    try {
-      // Убираем __typename, если он вдруг есть (Pinia его не любит)
-      const { __typename, ...itemInput } = item
-      const data = await gplClient(query, { listId, itemInput })
 
-      // Обновляем state: добавляем новый товар в начало
-      activeList.value.items.unshift(data.addItem)
+      // 4. Добавляем в UI
+      activeList.value.items.unshift(newItem)
       isAddItemFormVisible.value = false
     } catch (e) {
       console.error('Не удалось добавить товар:', e)
     }
   }
-
-  // 4. ИЗМЕНЕННЫЙ ACTION: Удаление товара
   const removeItem = async (itemId) => {
     if (!activeList.value) return
     const listId = activeList.value.id
-
-    // Оптимистичное обновление: сначала удаляем из UI
     const index = activeList.value.items.findIndex((i) => i.id === itemId)
     if (index === -1) return
     const removedItem = activeList.value.items.splice(index, 1)[0]
-
     const query = `
       mutation($listId: ID!, $itemId: ID!) {
         removeItem(listId: $listId, itemId: $itemId)
@@ -174,24 +186,18 @@ export const useListStore = defineStore('list', () => {
     `
     try {
       await gplClient(query, { listId, itemId })
-      // Все хорошо, товар удален
     } catch (e) {
       console.error('Ошибка удаления товара на сервере:', e)
-      // Откат: возвращаем товар на место, если сервер вернул ошибку
       activeList.value.items.splice(index, 0, removedItem)
       alert('Не удалось удалить товар. Попробуйте снова.')
     }
   }
-
-  // 5. ИЗМЕНЕННЫЙ ACTION: Переключение
   const toggleItem = async (itemId) => {
     if (!activeList.value) return
     const listId = activeList.value.id
     const item = activeList.value.items.find((i) => i.id === itemId)
     if (!item) return
-
     const newCompletedState = !item.completed
-
     const query = `
       mutation($listId: ID!, $itemId: ID!, $completed: Boolean!) {
         toggleItem(listId: $listId, itemId: $itemId, completed: $completed) {
@@ -201,72 +207,86 @@ export const useListStore = defineStore('list', () => {
       }
     `
     try {
-      // Обновляем UI сразу (оптимистично)
       item.completed = newCompletedState
       await gplClient(query, { listId, itemId, completed: newCompletedState })
     } catch (e) {
       console.error('Ошибка переключения товара:', e)
-      // Откат
       item.completed = !newCompletedState
     }
   }
-
-  // 6. ИЗМЕНЕННЫЙ ACTION: Сохранение
   const saveEdit = async () => {
     if (!editingItem.value || !activeList.value) return
 
     const listId = activeList.value.id
     const itemId = editingItem.value.id
-
-    // В input-объект идут только те поля, что есть в схеме UpdateItemInput
     const { id, completed, __typename, ...itemInput } = editingItem.value
 
-    const query = `
-      mutation($listId: ID!, $itemId: ID!, $itemInput: UpdateItemInput!) {
-        updateItem(listId: $listId, itemId: $itemId, itemInput: $itemInput) {
-          id
-          name
-          quantity
-          unit
-          category
-          dueDate
-          comment
-          priceStore1
-          priceStore2
-          userPrice
-          completed
-          imageUrl
+    try {
+      if (!itemInput.imageUrl && itemInput.name) {
+        console.log(`Ищем картинку для: ${itemInput.name}`)
+        const searchQuery = `
+          query($query: String!) {
+            searchImages(query: $query)
+          }
+        `
+        const searchData = await gplClient(searchQuery, { query: itemInput.name })
+
+        if (searchData.searchImages && searchData.searchImages.length > 0) {
+          itemInput.imageUrl = searchData.searchImages[0]
+          console.log(`Нашли картинку: ${itemInput.imageUrl}`)
         }
       }
-    `
-    try {
-      const data = await gplClient(query, { listId, itemId, itemInput })
 
-      // Обновляем state
+      const updateQuery = `
+        mutation($listId: ID!, $itemId: ID!, $itemInput: UpdateItemInput!) {
+          updateItem(listId: $listId, itemId: $itemId, itemInput: $itemInput) {
+            id name quantity unit category dueDate comment priceStore1 priceStore2 userPrice completed imageUrl
+          }
+        }
+      `
+      const data = await gplClient(updateQuery, { listId, itemId, itemInput })
+
       const index = activeList.value.items.findIndex((i) => i.id === itemId)
       if (index !== -1) {
         activeList.value.items[index] = data.updateItem
       }
       editingItem.value = null // Закрываем модалку
-    } catch(e) {
+
+    } catch (e) {
       console.error('Не удалось обновить товар:', e)
     }
   }
 
+  // ---
+  // --- VVV НОВЫЕ ACTIONS ДЛЯ UI VVV ---
+  // ---
 
-  // --- Остальные Actions (UI) ---
-  // (Они не изменились)
+  // Открывает модалку просмотра
+  const startViewing = (item) => {
+    viewingItem.value = item // Просто сохраняем ссылку на товар
+  }
+
+  // Закрывает модалку просмотра
+  const cancelViewing = () => {
+    viewingItem.value = null
+  }
+
+  // Открывает модалку редактирования (теперь она закрывает модалку просмотра)
+  const startEditing = (item) => {
+    cancelViewing() // <-- Закрываем просмотр, если он был открыт
+    editingItem.value = { ...item } // Клонируем
+  }
+
+  const cancelEdit = () => {
+    editingItem.value = null
+  }
+
+  // --- (Остальные UI actions без изменений) ---
   const selectList = (id) => {
     activeListId.value = id
   }
   const backToListSelector = () => {
     activeListId.value = null
-  }
-  const startEditing = (item) => {
-    editingItem.value = { ...item } // Клонируем
-  }
-  const cancelEdit = () => {
-    editingItem.value = null
   }
   const showAddItemForm = () => {
     isAddItemFormVisible.value = true
@@ -281,18 +301,20 @@ export const useListStore = defineStore('list', () => {
     isTotalsSidebarOpen.value = false
   }
 
-  // Возвращаем все
+  // --- ВОЗВРАЩАЕМ НОВЫЕ ДАННЫЕ ---
   return {
     lists,
     activeListId,
+    isLoading,
     isShareModalOpen,
     editingItem,
+    viewingItem, // <-- ⭐
     isAddItemFormVisible,
+    isTotalsSidebarOpen,
     activeList,
     groupedItems,
     totals,
-    isLoading, // <-- Не забудь вернуть
-    fetchLists, // <-- Наш новый action
+    fetchLists,
     selectList,
     backToListSelector,
     createList,
@@ -302,9 +324,10 @@ export const useListStore = defineStore('list', () => {
     startEditing,
     saveEdit,
     cancelEdit,
+    startViewing, // <-- ⭐
+    cancelViewing, // <-- ⭐
     showAddItemForm,
     hideAddItemForm,
-    isTotalsSidebarOpen,
     toggleTotalsSidebar,
     closeTotalsSidebar,
   }

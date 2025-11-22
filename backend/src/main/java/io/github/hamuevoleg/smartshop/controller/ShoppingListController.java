@@ -5,6 +5,7 @@ import io.github.hamuevoleg.smartshop.domain.ShoppingItem;
 import io.github.hamuevoleg.smartshop.domain.ShoppingList;
 import io.github.hamuevoleg.smartshop.domain.UpdateItemInput;
 import io.github.hamuevoleg.smartshop.repository.ShoppingListRepository;
+import io.github.hamuevoleg.smartshop.service.GeminiService; // <-- Импортируем наш новый сервис
 import io.github.hamuevoleg.smartshop.service.ImageSearchService;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
@@ -20,10 +21,15 @@ public class ShoppingListController {
 
     private final ShoppingListRepository repository;
     private final ImageSearchService imageSearchService;
+    private final GeminiService geminiService; // <-- Добавляем поле для AI сервиса
 
-    public ShoppingListController(ShoppingListRepository repository, ImageSearchService imageSearchService) {
+    // Обновляем конструктор, чтобы Spring мог внедрить GeminiService
+    public ShoppingListController(ShoppingListRepository repository,
+                                  ImageSearchService imageSearchService,
+                                  GeminiService geminiService) {
         this.repository = repository;
         this.imageSearchService = imageSearchService;
+        this.geminiService = geminiService;
     }
 
     @QueryMapping
@@ -57,7 +63,18 @@ public class ShoppingListController {
         newItem.setName(itemInput.getName());
         newItem.setQuantity(itemInput.getQuantity());
         newItem.setUnit(itemInput.getUnit());
-        newItem.setCategory(itemInput.getCategory());
+
+        // === ИНТЕГРАЦИЯ С GEMINI (AI) ===
+        String category = itemInput.getCategory();
+
+        // Если категория не пришла с фронта (пустая или null), просим AI угадать её
+        if (category == null || category.trim().isEmpty()) {
+            // Передаем название товара, получаем категорию (например, "Dairy" для "Milk")
+            category = geminiService.suggestCategory(itemInput.getName());
+        }
+        newItem.setCategory(category);
+        // ================================
+
         newItem.setDueDate(itemInput.getDueDate());
         newItem.setComment(itemInput.getComment());
         newItem.setPriceStore1(itemInput.getPriceStore1());
@@ -120,6 +137,4 @@ public class ShoppingListController {
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Item not found: " + itemId));
     }
-
-    // TODO: @SubscriptionMapping
 }

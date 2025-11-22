@@ -13,12 +13,11 @@ public class WebConfig {
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
-                // Мы разрешаем нашему фронтенду (с localhost:5173)
-                // обращаться ко всем путям ("/**") на нашем бэкенде.
+
                 registry.addMapping("/**")
-                        .allowedOrigins("http://localhost:5173") // URL твоего Vue-приложения
+                        .allowedOrigins("http://localhost:5173")
                         .allowedMethods("GET", "POST", "OPTIONS", "PUT", "DELETE") // Разрешаем все методы
-                        .allowedHeaders("*") // Разрешаем все заголовки
+                        .allowedHeaders("*")
                         .allowCredentials(true);
             }
         };

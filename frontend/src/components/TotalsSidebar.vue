@@ -24,7 +24,7 @@
             <span class="store-name">Difference:</span>
             <span class="price" :class="diffClass">{{ store.totals.diff }}</span>
           </div>
-          <p class="totals-info">* Учитываются только не купленные товары.</p>
+          <p class="totals-info">* Уonly unpurchased goods are taken into account.</p>
         </div>
       </div>
     </div>

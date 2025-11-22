@@ -1,8 +1,8 @@
 <template>
   <div class="list-selector-container">
     <div class="header-section">
-      <h1 class="title">Мои списки покупок</h1>
-      <p class="subtitle">Управляйте своими списками и экономьте время</p>
+      <h1 class="title">My shop list</h1>
+      <p class="subtitle">Manage your lists and save your time</p>
     </div>
 
     <div class="list-grid">
@@ -11,7 +11,7 @@
           <div class="card-icon">
             <span class="plus-icon">+</span>
           </div>
-          <span class="card-text">Создать список</span>
+          <span class="card-text">Create a new list</span>
         </template>
         <template v-else>
           <form
@@ -22,7 +22,7 @@
             <input
               type="text"
               v-model="newListName"
-              placeholder="Название списка..."
+              placeholder="list name..."
               class="form-input"
               ref="createInput"
             />
@@ -31,7 +31,7 @@
               class="btn btn-primary"
               @mousedown.prevent
             >
-              Создать
+              Create
             </button>
           </form>
         </template>
@@ -50,11 +50,11 @@
         <div class="list-stats">
           <span class="stat-item">
             <span class="stat-icon">📦</span>
-            {{ list.items.length }} товар(ов)
+            {{ list.items.length }} good(s)
           </span>
           <span class="stat-item" v-if="list.items.some(i => i.completed)">
             <span class="stat-icon">✓</span>
-            {{ list.items.filter(i => i.completed).length }} куплено
+            {{ list.items.filter(i => i.completed).length }} bought
           </span>
         </div>
       </div>
