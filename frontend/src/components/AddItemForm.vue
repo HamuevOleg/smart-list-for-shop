@@ -109,10 +109,8 @@
 </template>
 
 <script setup>
-// ... (весь <script setup> остается без изменений) ...
 import { ref, computed } from 'vue'
 import { useListStore } from '@/stores/listStore'
-// Новые импорты
 import PopoverWrapper from './common/PopoverWrapper.vue'
 import CustomCategorySelector from './common/CustomCategorySelector.vue'
 import CustomCalendar from './common/CustomCalendar.vue'
@@ -122,7 +120,7 @@ const store = useListStore()
 const getInitialItem = () => ({
   name: '',
   quantity: 1,
-  unit: 'шт.',
+  unit: 'pcs',
   category: '',
   dueDate: '',
   comment: '',
@@ -134,11 +132,11 @@ const getInitialItem = () => ({
 const item = ref(getInitialItem())
 
 const handleSubmit = () => {
+  console.log('🚀 Submitting item:', item.value)
   store.addItem(item.value)
-  item.value = getInitialItem() // Очищаем форму
+  item.value = getInitialItem()
 }
 
-// Форматируем дату для кнопки календаря
 const formattedDate = computed(() => {
   if (!item.value.dueDate) return ''
   const [y, m, d] = item.value.dueDate.split('-')
@@ -147,7 +145,6 @@ const formattedDate = computed(() => {
 </script>
 
 <style scoped>
-/* ... (все <style scoped> остаются без изменений) ... */
 .slide-fade-enter-active {
   transition: all 0.3s ease-out;
 }
@@ -159,7 +156,6 @@ const formattedDate = computed(() => {
   transform: translateY(-20px);
   opacity: 0;
 }
-/* Стили для кнопки-триггера */
 .popover-trigger {
   display: flex;
   justify-content: space-between;
@@ -174,7 +170,6 @@ const formattedDate = computed(() => {
   background: #f1f5f9;
 }
 
-/* Переопределяем стили для .form-row для 3х колонок */
 @media (max-width: 600px) {
   .form-row {
     flex-direction: column;
@@ -223,7 +218,7 @@ h2 {
   gap: 0.25rem;
   flex: 1;
 }
-.form-group.large { flex: 3; } /* Даем названию больше места */
+.form-group.large { flex: 3; }
 .form-group.small { flex: 1; }
 .form-group label {
   font-size: 0.85rem;

@@ -32,7 +32,6 @@ import { useListStore } from '@/stores/listStore'
 import ShoppingListItem from './ShoppingListItem.vue'
 
 const store = useListStore()
-// Логика 'groupedItems' в store, так что здесь все чисто
 </script>
 
 <style scoped>
@@ -67,26 +66,12 @@ const store = useListStore()
   border-bottom: 2px solid var(--primary-color);
 }
 
-/*
- *
- * ИЗМЕНЕНИЯ ДЛЯ СЕТКИ:
- * Раньше здесь был flex-column.
- * Теперь это адаптивная сетка (GRID).
- *
-*/
 .items-wrapper {
   display: grid;
-  /* Создает колонки по 250px.
-    'auto-fill' - заполняет доступное пространство.
-    'minmax' - колонка будет МИНИМУМ 250px,
-    но растянется (1fr), чтобы заполнить все место.
-  */
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   gap: 1rem;
 }
 
-/* * Анимация TransitionGroup все еще работает!
-*/
 .list-anim-move,
 .list-anim-enter-active,
 .list-anim-leave-active {

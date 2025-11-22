@@ -3,33 +3,34 @@ import { defineStore } from 'pinia'
 import { gplClient } from '@/api/gplClient'
 
 export const useListStore = defineStore('list', () => {
-  // --- STATE (Состояние) ---
+  // --- STATE ---
   const lists = ref([])
   const activeListId = ref(null)
   const isLoading = ref(false)
 
-  // --- Состояние UI ---
+  // --- UI STATE ---
   const isShareModalOpen = ref(false)
-  const editingItem = ref(null) // Для модалки редактирования
-  const viewingItem = ref(null) // <-- ⭐ НОВОЕ СОСТОЯНИЕ (для модалки просмотра)
+  const editingItem = ref(null)
+  const viewingItem = ref(null)
   const isAddItemFormVisible = ref(false)
   const isTotalsSidebarOpen = ref(false)
 
-  // --- GETTERS (Геттеры) ---
-  // (Без изменений)
+  // --- GETTERS ---
   const activeList = computed(() => {
     return lists.value.find((list) => list.id === activeListId.value)
   })
+
   const groupedItems = computed(() => {
     if (!activeList.value) return {}
     const sorted = [...activeList.value.items].sort((a, b) => a.completed - b.completed)
     return sorted.reduce((acc, item) => {
-      const category = item.category || 'Без категории'
+      const category = item.category || 'Uncategorized'
       if (!acc[category]) acc[category] = []
       acc[category].push(item)
       return acc
     }, {})
   })
+
   const totals = computed(() => {
     if (!activeList.value) return { store1: 0, store2: 0, user: 0, diff: 0 }
     let total1 = 0, total2 = 0, totalUser = 0;
@@ -57,8 +58,7 @@ export const useListStore = defineStore('list', () => {
     }
   })
 
-  // --- ACTIONS (Действия) ---
-  // (Все экшены работы с API (fetchLists, createList, addItem, etc.) остаются БЕЗ ИЗМЕНЕНИЙ)
+  // --- ACTIONS ---
   const fetchLists = async () => {
     isLoading.value = true
     const query = `
@@ -87,11 +87,12 @@ export const useListStore = defineStore('list', () => {
       const data = await gplClient(query)
       lists.value = data.allLists
     } catch (e) {
-      console.error('Не удалось загрузить списки:', e)
+      console.error('Failed to load lists:', e)
     } finally {
       isLoading.value = false
     }
   }
+
   const createList = async (name) => {
     const query = `
       mutation($name: String!) {
@@ -103,20 +104,23 @@ export const useListStore = defineStore('list', () => {
       }
     `
     try {
-      const data = await gplClient(query, { name: name || 'Новый список' })
+      const data = await gplClient(query, { name: name || 'New List' })
       lists.value.push(data.createList)
       activeListId.value = data.createList.id
     } catch (e) {
-      console.error('Не удалось создать список:', e)
+      console.error('Failed to create list:', e)
     }
   }
+
   const addItem = async (item) => {
     if (!activeList.value) return
     const listId = activeList.value.id
     const { __typename, ...itemInput } = item
 
+    console.log('📦 Adding item (before AI):', itemInput)
+
     try {
-      // 1. СНАЧАЛА создаем товар БЕЗ картинки
+      // 1. Create item WITHOUT image
       const createQuery = `
         mutation($listId: ID!, $itemInput: AddItemInput!) {
           addItem(listId: $listId, itemInput: $itemInput) {
@@ -128,10 +132,11 @@ export const useListStore = defineStore('list', () => {
       const createData = await gplClient(createQuery, { listId, itemInput: createInput })
 
       let newItem = createData.addItem
+      console.log('✅ Item created (from server):', newItem)
 
-      // 2. ТЕПЕРЬ ищем картинку
+      // 2. Search for image
       if (newItem.name) {
-        console.log(`Ищем картинку для: ${newItem.name}`)
+        console.log(`🔍 Searching image for: ${newItem.name}`)
         const searchQuery = `
           query($query: String!) {
             searchImages(query: $query)
@@ -139,13 +144,21 @@ export const useListStore = defineStore('list', () => {
         `
         const searchData = await gplClient(searchQuery, { query: newItem.name })
 
-        // 3. Если картинка найдена, ВЫЗЫВАЕМ UPDATE
+        // 3. If image found, UPDATE item
         if (searchData.searchImages && searchData.searchImages.length > 0) {
           const foundImageUrl = searchData.searchImages[0]
-          console.log(`Нашли картинку, обновляем: ${foundImageUrl}`)
+          console.log(`🖼️ Image found, updating: ${foundImageUrl}`)
 
           const updateInput = {
-            ...createInput,
+            name: newItem.name,
+            quantity: newItem.quantity,
+            unit: newItem.unit,
+            category: newItem.category,
+            dueDate: newItem.dueDate,
+            comment: newItem.comment,
+            priceStore1: newItem.priceStore1,
+            priceStore2: newItem.priceStore2,
+            userPrice: newItem.userPrice,
             imageUrl: foundImageUrl
           }
 
@@ -163,16 +176,20 @@ export const useListStore = defineStore('list', () => {
           })
 
           newItem = updateData.updateItem
+          console.log('🖼️ Item updated with image:', newItem)
         }
       }
 
-      // 4. Добавляем в UI
-      activeList.value.items.unshift(newItem)
+      // 4. Add to UI
+      console.log('➕ Adding final item to UI:', newItem)
+      activeList.value.items = [newItem, ...activeList.value.items]
+      console.log('📋 Full items list:', activeList.value.items)
       isAddItemFormVisible.value = false
     } catch (e) {
-      console.error('Не удалось добавить товар:', e)
+      console.error('Failed to add item:', e)
     }
   }
+
   const removeItem = async (itemId) => {
     if (!activeList.value) return
     const listId = activeList.value.id
@@ -187,11 +204,12 @@ export const useListStore = defineStore('list', () => {
     try {
       await gplClient(query, { listId, itemId })
     } catch (e) {
-      console.error('Ошибка удаления товара на сервере:', e)
+      console.error('Failed to remove item:', e)
       activeList.value.items.splice(index, 0, removedItem)
-      alert('Не удалось удалить товар. Попробуйте снова.')
+      alert('Failed to remove item. Try again.')
     }
   }
+
   const toggleItem = async (itemId) => {
     if (!activeList.value) return
     const listId = activeList.value.id
@@ -210,10 +228,11 @@ export const useListStore = defineStore('list', () => {
       item.completed = newCompletedState
       await gplClient(query, { listId, itemId, completed: newCompletedState })
     } catch (e) {
-      console.error('Ошибка переключения товара:', e)
+      console.error('Failed to toggle item:', e)
       item.completed = !newCompletedState
     }
   }
+
   const saveEdit = async () => {
     if (!editingItem.value || !activeList.value) return
 
@@ -223,7 +242,7 @@ export const useListStore = defineStore('list', () => {
 
     try {
       if (!itemInput.imageUrl && itemInput.name) {
-        console.log(`Ищем картинку для: ${itemInput.name}`)
+        console.log(`🔍 Searching image for: ${itemInput.name}`)
         const searchQuery = `
           query($query: String!) {
             searchImages(query: $query)
@@ -233,7 +252,7 @@ export const useListStore = defineStore('list', () => {
 
         if (searchData.searchImages && searchData.searchImages.length > 0) {
           itemInput.imageUrl = searchData.searchImages[0]
-          console.log(`Нашли картинку: ${itemInput.imageUrl}`)
+          console.log(`🖼️ Image found: ${itemInput.imageUrl}`)
         }
       }
 
@@ -250,65 +269,61 @@ export const useListStore = defineStore('list', () => {
       if (index !== -1) {
         activeList.value.items[index] = data.updateItem
       }
-      editingItem.value = null // Закрываем модалку
+      editingItem.value = null
 
     } catch (e) {
-      console.error('Не удалось обновить товар:', e)
+      console.error('Failed to update item:', e)
     }
   }
 
-  // ---
-  // --- VVV НОВЫЕ ACTIONS ДЛЯ UI VVV ---
-  // ---
-
-  // Открывает модалку просмотра
   const startViewing = (item) => {
-    viewingItem.value = item // Просто сохраняем ссылку на товар
+    viewingItem.value = item
   }
 
-  // Закрывает модалку просмотра
   const cancelViewing = () => {
     viewingItem.value = null
   }
 
-  // Открывает модалку редактирования (теперь она закрывает модалку просмотра)
   const startEditing = (item) => {
-    cancelViewing() // <-- Закрываем просмотр, если он был открыт
-    editingItem.value = { ...item } // Клонируем
+    cancelViewing()
+    editingItem.value = { ...item }
   }
 
   const cancelEdit = () => {
     editingItem.value = null
   }
 
-  // --- (Остальные UI actions без изменений) ---
   const selectList = (id) => {
     activeListId.value = id
   }
+
   const backToListSelector = () => {
     activeListId.value = null
   }
+
   const showAddItemForm = () => {
     isAddItemFormVisible.value = true
   }
+
   const hideAddItemForm = () => {
     isAddItemFormVisible.value = false
   }
+
   const toggleTotalsSidebar = () => {
     isTotalsSidebarOpen.value = !isTotalsSidebarOpen.value
   }
+
   const closeTotalsSidebar = () => {
     isTotalsSidebarOpen.value = false
   }
 
-  // --- ВОЗВРАЩАЕМ НОВЫЕ ДАННЫЕ ---
   return {
     lists,
     activeListId,
     isLoading,
     isShareModalOpen,
     editingItem,
-    viewingItem, // <-- ⭐
+    viewingItem,
     isAddItemFormVisible,
     isTotalsSidebarOpen,
     activeList,
@@ -324,8 +339,8 @@ export const useListStore = defineStore('list', () => {
     startEditing,
     saveEdit,
     cancelEdit,
-    startViewing, // <-- ⭐
-    cancelViewing, // <-- ⭐
+    startViewing,
+    cancelViewing,
     showAddItemForm,
     hideAddItemForm,
     toggleTotalsSidebar,
