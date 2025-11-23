@@ -23,7 +23,7 @@ public class GeminiService {
     private VertexAI vertexAI;
     private GenerativeModel model;
 
-    // Список категорий, о которых знает фронтенд
+    // Список категорий (оставляем как было)
     private static final String CATEGORIES_PROMPT =
             "Fruits, Vegetables, Dairy, Meat, Fish, Groceries, Beverages, Household, Other";
 
@@ -38,23 +38,20 @@ public class GeminiService {
     }
 
     private void initModel() throws IOException {
-        // Загружаем файл ключей
         GoogleCredentials credentials = GoogleCredentials.fromStream(new FileInputStream("credentials.json"))
-                // !!! ВАЖНО: Явно добавляем права доступа к Cloud Platform !!!
                 .createScoped(Arrays.asList("https://www.googleapis.com/auth/cloud-platform"));
 
-        // Инициализируем клиент Vertex AI
         this.vertexAI = new VertexAI.Builder()
                 .setProjectId(projectId)
                 .setLocation(location)
                 .setCredentials(credentials)
                 .build();
 
-        // Создаем модель
         this.model = new GenerativeModel(modelName, vertexAI);
     }
 
     public String suggestCategory(String itemName) {
+        // ... (твой старый код suggestCategory оставляем без изменений) ...
         try {
             String prompt = String.format(
                     "Analyze the shopping item '%s'. " +
@@ -62,23 +59,48 @@ public class GeminiService {
                             "Return ONLY the category name (one word). If unsure, return 'Other'.",
                     itemName, CATEGORIES_PROMPT
             );
-
             GenerateContentResponse response = model.generateContent(prompt);
-            String result = ResponseHandler.getText(response).trim();
-
-            return cleanResponse(result);
+            return cleanResponse(response);
         } catch (Exception e) {
-            System.err.println("Vertex AI Error: " + e.getMessage());
-            // Если AI недоступен, возвращаем дефолт, чтобы приложение не падало
+            System.err.println("Vertex AI Error (Category): " + e.getMessage());
             return "Other";
         }
     }
 
-    private String cleanResponse(String text) {
-        // Убираем возможные лишние символы (точки, переносы строк)
-        String cleaned = text.replace("\n", "").replace(".", "").trim();
+    // === НОВЫЙ МЕТОД ДЛЯ ЦЕН ===
+    public String suggestPrices(String itemName) {
+        try {
+            // Промпт специально заточен под Кишинев и конкретный формат ответа
+            String prompt = String.format(
+                    "Act as a shopping assistant in Chisinau, Moldova. " +
+                            "Estimate the current price for 1 unit (kg/pack/liter) of '%s' in MDL (Moldovan Leu). " +
+                            "Compare prices specifically for 'Metro' and 'Linella'. " +
+                            "Strict output format required: Shop1:Metro - Price:X; Shop2:Linella - Price:Y; " +
+                            "Where X and Y are just numbers (e.g. 25.50). " +
+                            "If you don't know exact price, estimate average market price for Moldova. " +
+                            "Do not write any extra text.",
+                    itemName
+            );
 
-        // Проверяем, валидная ли категория
+            GenerateContentResponse response = model.generateContent(prompt);
+            String result = cleanResponse(response);
+            System.out.println("AI Price Suggestion: " + result); // Лог для отладки
+            return result;
+
+        } catch (Exception e) {
+            System.err.println("Vertex AI Error (Price): " + e.getMessage());
+            return "";
+        }
+    }
+
+    private String cleanResponse(GenerateContentResponse response) {
+        String text = ResponseHandler.getText(response).trim();
+        return text.replace("\n", "").replace("`", "").trim();
+    }
+
+    // Перегрузка для старого метода, если использовался внутри
+    private String cleanResponse(String text) {
+        String cleaned = text.replace("\n", "").replace(".", "").trim();
         if (Arrays.stream(CATEGORIES_PROMPT.split(", ")).anyMatch(c -> c.equals(cleaned))) {
             return cleaned;
         }
