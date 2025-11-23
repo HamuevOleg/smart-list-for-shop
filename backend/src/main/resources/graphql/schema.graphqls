@@ -1,4 +1,12 @@
-# basic types of data
+# --- TYPES ---
+
+# Тип участника списка (НОВЫЙ)
+type ListParticipant {
+    username: String
+    avatar: String
+    lastSeen: String
+}
+
 type ShoppingItem {
     id          : ID!
     name        : String!
@@ -12,15 +20,29 @@ type ShoppingItem {
     userPrice   : Float
     completed   : Boolean!
     imageUrl    : String
+
+    # Поля авторов
+    addedBy: String
+    addedByAvatar: String
+    completedBy: String
+    completedByAvatar: String
 }
 
 type ShoppingList {
     id    : ID!
     name  : String!
     items : [ShoppingItem]!
+    participants: [ListParticipant]
+    messages: [ChatMessage]
 }
 
-# input types
+# --- INPUTS ---
+
+input UserInput {
+    username: String!
+    avatar: String
+}
+
 input AddItemInput {
     name       : String!
     quantity   : Float
@@ -46,23 +68,43 @@ input UpdateItemInput {
     imageUrl: String
 }
 
-#query
+# --- QUERY ---
+
 type Query {
     allLists: [ShoppingList]!
-    listById(id: ID!): ShoppingList
+
+    # Здесь мы принимаем user, чтобы обновлять "lastSeen"
+    listById(id: ID!, user: UserInput): ShoppingList
+
     searchImages(query: String!): [String]!
 }
 
-#mutation
+# --- MUTATION ---
+
 type Mutation {
     createList(name: String!): ShoppingList!
-    addItem(listId: ID!, itemInput: AddItemInput!): ShoppingItem!
+
+    addItem(listId: ID!, itemInput: AddItemInput!, user: UserInput!): ShoppingItem!
+
     updateItem(listId: ID!, itemId: ID!, itemInput: UpdateItemInput!): ShoppingItem!
+
     removeItem(listId: ID!, itemId: ID!): Boolean!
-    toggleItem(listId: ID!, itemId: ID!, completed: Boolean!): ShoppingItem!
+
+    toggleItem(listId: ID!, itemId: ID!, completed: Boolean!, user: UserInput!): ShoppingItem!
+
+    sendMessage(listId: ID!, text: String!, user: UserInput!): ChatMessage!
 }
 
-#subscription(for REAL-TIME updates)
+# --- SUBSCRIPTION ---
+
 type Subscription {
     listUpdated(listId: ID!): ShoppingList
+}
+
+type ChatMessage {
+    id: ID
+    sender: String
+    avatar: String
+    text: String
+    timestamp: String
 }

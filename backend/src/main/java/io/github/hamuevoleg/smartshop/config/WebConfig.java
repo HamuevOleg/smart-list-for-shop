@@ -15,7 +15,9 @@ public class WebConfig {
             public void addCorsMappings(CorsRegistry registry) {
 
                 registry.addMapping("/**")
-                        .allowedOrigins("http://localhost:5173")
+                        // ВАЖНО: Разрешаем доступ со всех устройств в сети (для тестов)
+                        // Можно заменить "*" на конкретный адрес: "http://192.168.0.91:5173"
+                        .allowedOriginPatterns("*")
                         .allowedMethods("GET", "POST", "OPTIONS", "PUT", "DELETE") // Разрешаем все методы
                         .allowedHeaders("*")
                         .allowCredentials(true);

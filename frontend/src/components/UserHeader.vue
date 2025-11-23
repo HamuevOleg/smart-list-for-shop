@@ -2,17 +2,55 @@
   <header class="user-header">
     <div class="header-top">
       <div class="user-info">
-        <img
-          src="https://i.pinimg.com/1200x/d2/25/6b/d2256bc3256143beb33b89ffc11132f3.jpg"
-          alt="pfp"
-          class="avatar"
-        />
-        <span class="username">tinsuki</span>
+        <div class="avatar-wrapper">
+          <img
+            v-if="isImage(userStore.user.avatar)"
+            :src="userStore.user.avatar"
+            alt="pfp"
+            class="avatar-img"
+          />
+          <div v-else class="avatar-emoji">
+            {{ userStore.user.avatar }}
+          </div>
+        </div>
+
+        <div class="user-text">
+          <span class="username">{{ userStore.user.username }}</span>
+          <button @click="handleLogout" class="btn-logout">
+            Change user ↺
+          </button>
+        </div>
       </div>
+
       <h2 class="list-title">{{ store.activeList?.name }}</h2>
+
       <button class="btn btn-primary" @click="store.isShareModalOpen = true">
         Share 🔗
       </button>
+    </div>
+
+    <div class="participants-bar" v-if="otherParticipants.length > 0">
+      <span class="label">Also here:</span>
+      <div class="participants-list">
+        <div
+          v-for="p in otherParticipants"
+          :key="p.username"
+          class="participant"
+          :title="p.username + ' (' + getStatusText(p.lastSeen) + ')'"
+        >
+          <div class="p-avatar-wrapper">
+            <img
+              v-if="isImage(p.avatar)"
+              :src="p.avatar"
+              class="p-avatar-img"
+            />
+            <div v-else class="p-avatar-emoji">
+              {{ p.avatar }}
+            </div>
+            <span class="status-dot" :class="getStatusClass(p.lastSeen)"></span>
+          </div>
+        </div>
+      </div>
     </div>
 
     <nav class="header-nav">
@@ -27,8 +65,46 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import { useListStore } from '@/stores/listStore'
+import { useUserStore } from '@/stores/userStore'
+
 const store = useListStore()
+const userStore = useUserStore()
+
+// Универсальная проверка на картинку
+const isImage = (avatar) => {
+  return avatar && (avatar.startsWith('http') || avatar.startsWith('data:image'))
+}
+
+const handleLogout = () => {
+  if (confirm('Are you sure you want to log out?')) {
+    userStore.logout()
+  }
+}
+
+// Фильтруем список: убираем себя из списка участников
+const otherParticipants = computed(() => {
+  const all = store.activeList?.participants || []
+  return all.filter(p => p.username !== userStore.user.username)
+})
+
+// Определение статуса (Онлайн если был < 20 сек назад)
+// Так как опрос идет каждые 3 сек, 20 сек - это с запасом
+const getStatusClass = (lastSeenStr) => {
+  const diff = Date.now() - Number(lastSeenStr)
+  if (diff < 20000) return 'online' // < 20 сек
+  if (diff < 60000) return 'away'   // < 1 мин
+  return 'offline'
+}
+
+const getStatusText = (lastSeenStr) => {
+  const diff = Date.now() - Number(lastSeenStr)
+  if (diff < 20000) return 'Online now'
+  const mins = Math.floor(diff / 60000)
+  if (mins < 1) return 'Just seen'
+  return `${mins}m ago`
+}
 </script>
 
 <style scoped>
@@ -48,23 +124,98 @@ const store = useListStore()
 .user-info {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.75rem;
 }
-.avatar {
-  width: 40px;
-  height: 40px;
+.user-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.2;
+}
+.btn-logout {
+  background: none;
+  border: none;
+  color: var(--text-light);
+  font-size: 0.75rem;
+  cursor: pointer;
+  padding: 0;
+  opacity: 0.7;
+  text-decoration: underline;
+}
+.btn-logout:hover { opacity: 1; color: var(--primary-color); }
+
+/* Стили главной аватарки */
+.avatar-img, .avatar-emoji {
+  width: 45px; height: 45px;
   border-radius: 50%;
   border: 2px solid var(--primary-color);
+  object-fit: cover;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.5rem; background: var(--bg-input);
 }
-.username {
+
+.username { font-weight: 700; font-size: 1.1rem; color: #fff; }
+.list-title { font-size: 1.25rem; color: var(--secondary-color); margin: 0; text-align: center; }
+
+/* --- СТИЛИ ДЛЯ ПАНЕЛИ УЧАСТНИКОВ --- */
+.participants-bar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 0.5rem 0.75rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+}
+.label {
+  font-size: 0.8rem;
+  color: var(--text-light);
   font-weight: 600;
-  font-size: 1rem;
+  white-space: nowrap;
 }
-.list-title {
-  font-size: 1.25rem;
-  color: var(--secondary-color);
-  margin: 0;
-  text-align: center;
+.participants-list {
+  display: flex;
+  gap: 0.5rem; /* Отступ между участниками */
+  flex-wrap: wrap;
+}
+.participant {
+  position: relative;
+  transition: transform 0.2s;
+  cursor: help; /* Курсор подсказывает, что есть title */
+}
+.participant:hover {
+  transform: translateY(-2px);
+}
+
+/* Маленькие аватарки участников */
+.p-avatar-wrapper {
+  position: relative;
+  width: 32px; height: 32px;
+}
+.p-avatar-img, .p-avatar-emoji {
+  width: 100%; height: 100%;
+  border-radius: 50%;
+  border: 2px solid var(--card-color); /* Обводка под цвет фона */
+  background: var(--bg-input);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.2rem; object-fit: cover;
+}
+
+/* Точка статуса */
+.status-dot {
+  position: absolute;
+  bottom: -2px; right: -2px;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  border: 2px solid var(--card-color);
+  background-color: #94a3b8; /* По умолчанию серый */
+}
+.status-dot.online { background-color: #10b981; box-shadow: 0 0 5px #10b981; }
+.status-dot.away { background-color: #f59e0b; }
+
+@media (max-width: 600px) {
+  .list-title { display: none; }
 }
 
 .header-nav {
@@ -81,15 +232,7 @@ const store = useListStore()
   border-bottom: 3px solid transparent;
   transition: all 0.2s ease;
 }
-.nav-tab:hover {
-  color: var(--secondary-color);
-}
-.nav-tab.active {
-  color: var(--primary-color);
-  border-bottom-color: var(--primary-color);
-}
-.nav-tab.disabled {
-  color: var(--border-color);
-  cursor: not-allowed;
-}
+.nav-tab:hover { color: var(--secondary-color); }
+.nav-tab.active { color: var(--primary-color); border-bottom-color: var(--primary-color); }
+.nav-tab.disabled { color: var(--border-color); cursor: not-allowed; }
 </style>

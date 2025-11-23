@@ -1,12 +1,14 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { gplClient } from '@/api/gplClient'
+import { useUserStore } from './userStore'
 
 export const useListStore = defineStore('list', () => {
   // --- STATE ---
   const lists = ref([])
   const activeListId = ref(null)
   const isLoading = ref(false)
+  const isAddingItem = ref(false)
 
   // --- UI STATE ---
   const isShareModalOpen = ref(false)
@@ -64,21 +66,10 @@ export const useListStore = defineStore('list', () => {
     const query = `
       query {
         allLists {
-          id
-          name
+          id name
           items {
-            id
-            name
-            quantity
-            unit
-            category
-            dueDate
-            comment
-            priceStore1
-            priceStore2
-            userPrice
-            completed
-            imageUrl
+            id name quantity unit category dueDate comment priceStore1 priceStore2 userPrice completed imageUrl
+            addedBy addedByAvatar completedBy completedByAvatar
           }
         }
       }
@@ -93,14 +84,58 @@ export const useListStore = defineStore('list', () => {
     }
   }
 
+  // Обновленный fetchListById (теперь запрашивает и сообщения)
+  const fetchListById = async (id, { background = false } = {}) => {
+    if (!background) isLoading.value = true
+
+    const userStore = useUserStore()
+
+    const query = `
+      query($id: ID!, $user: UserInput) {
+        listById(id: $id, user: $user) {
+          id
+          name
+          items {
+            id name quantity unit category dueDate comment priceStore1 priceStore2 userPrice completed imageUrl
+            addedBy addedByAvatar completedBy completedByAvatar
+          }
+          participants {
+            username avatar lastSeen
+          }
+          # Запрашиваем сообщения чата
+          messages {
+            id sender avatar text timestamp
+          }
+        }
+      }
+    `
+
+    try {
+      const user = userStore.isRegistered
+        ? { username: userStore.user.username, avatar: userStore.user.avatar }
+        : null
+
+      const data = await gplClient(query, { id, user })
+
+      if (data.listById) {
+        lists.value = [data.listById]
+        activeListId.value = data.listById.id
+      } else {
+        if (!background) console.error('List not found by ID')
+        activeListId.value = null
+      }
+    } catch (e) {
+      console.error('Failed to load list by ID:', e)
+      activeListId.value = null
+    } finally {
+      if (!background) isLoading.value = false
+    }
+  }
+
   const createList = async (name) => {
     const query = `
       mutation($name: String!) {
-        createList(name: $name) {
-          id
-          name
-          items { id }
-        }
+        createList(name: $name) { id name items { id } }
       }
     `
     try {
@@ -114,79 +149,59 @@ export const useListStore = defineStore('list', () => {
 
   const addItem = async (item) => {
     if (!activeList.value) return
+    const userStore = useUserStore()
+    if (!userStore.isRegistered) return
+
+    isAddingItem.value = true
+
     const listId = activeList.value.id
     const { __typename, ...itemInput } = item
-
-    console.log('📦 Adding item (before AI):', itemInput)
-
     try {
-      // 1. Create item WITHOUT image
       const createQuery = `
-        mutation($listId: ID!, $itemInput: AddItemInput!) {
-          addItem(listId: $listId, itemInput: $itemInput) {
+        mutation($listId: ID!, $itemInput: AddItemInput!, $user: UserInput!) {
+          addItem(listId: $listId, itemInput: $itemInput, user: $user) {
             id name quantity unit category dueDate comment priceStore1 priceStore2 userPrice completed imageUrl
+            addedBy addedByAvatar completedBy completedByAvatar
           }
         }
       `
       const { imageUrl, ...createInput } = itemInput
-      const createData = await gplClient(createQuery, { listId, itemInput: createInput })
+      const user = { username: userStore.user.username, avatar: userStore.user.avatar }
 
+      const createData = await gplClient(createQuery, { listId, itemInput: createInput, user })
       let newItem = createData.addItem
-      console.log('✅ Item created (from server):', newItem)
 
-      // 2. Search for image
       if (newItem.name) {
-        console.log(`🔍 Searching image for: ${newItem.name}`)
-        const searchQuery = `
-          query($query: String!) {
-            searchImages(query: $query)
-          }
-        `
+        const searchQuery = `query($query: String!) { searchImages(query: $query) }`
         const searchData = await gplClient(searchQuery, { query: newItem.name })
 
-        // 3. If image found, UPDATE item
         if (searchData.searchImages && searchData.searchImages.length > 0) {
           const foundImageUrl = searchData.searchImages[0]
-          console.log(`🖼️ Image found, updating: ${foundImageUrl}`)
-
           const updateInput = {
-            name: newItem.name,
-            quantity: newItem.quantity,
-            unit: newItem.unit,
-            category: newItem.category,
-            dueDate: newItem.dueDate,
-            comment: newItem.comment,
-            priceStore1: newItem.priceStore1,
-            priceStore2: newItem.priceStore2,
-            userPrice: newItem.userPrice,
-            imageUrl: foundImageUrl
+            name: newItem.name, quantity: newItem.quantity, unit: newItem.unit,
+            category: newItem.category, dueDate: newItem.dueDate, comment: newItem.comment,
+            priceStore1: newItem.priceStore1, priceStore2: newItem.priceStore2,
+            userPrice: newItem.userPrice, imageUrl: foundImageUrl
           }
-
           const updateQuery = `
             mutation($listId: ID!, $itemId: ID!, $itemInput: UpdateItemInput!) {
               updateItem(listId: $listId, itemId: $itemId, itemInput: $itemInput) {
                 id name quantity unit category dueDate comment priceStore1 priceStore2 userPrice completed imageUrl
+                addedBy addedByAvatar completedBy completedByAvatar
               }
             }
           `
-          const updateData = await gplClient(updateQuery, {
-            listId: listId,
-            itemId: newItem.id,
-            itemInput: updateInput
-          })
-
+          const updateData = await gplClient(updateQuery, { listId, itemId: newItem.id, itemInput: updateInput })
           newItem = updateData.updateItem
-          console.log('🖼️ Item updated with image:', newItem)
         }
       }
 
-      // 4. Add to UI
-      console.log('➕ Adding final item to UI:', newItem)
       activeList.value.items = [newItem, ...activeList.value.items]
-      console.log('📋 Full items list:', activeList.value.items)
       isAddItemFormVisible.value = false
     } catch (e) {
       console.error('Failed to add item:', e)
+    } finally {
+      isAddingItem.value = false
     }
   }
 
@@ -196,11 +211,7 @@ export const useListStore = defineStore('list', () => {
     const index = activeList.value.items.findIndex((i) => i.id === itemId)
     if (index === -1) return
     const removedItem = activeList.value.items.splice(index, 1)[0]
-    const query = `
-      mutation($listId: ID!, $itemId: ID!) {
-        removeItem(listId: $listId, itemId: $itemId)
-      }
-    `
+    const query = `mutation($listId: ID!, $itemId: ID!) { removeItem(listId: $listId, itemId: $itemId) }`
     try {
       await gplClient(query, { listId, itemId })
     } catch (e) {
@@ -212,21 +223,32 @@ export const useListStore = defineStore('list', () => {
 
   const toggleItem = async (itemId) => {
     if (!activeList.value) return
+    const userStore = useUserStore()
+
     const listId = activeList.value.id
     const item = activeList.value.items.find((i) => i.id === itemId)
     if (!item) return
     const newCompletedState = !item.completed
+
     const query = `
-      mutation($listId: ID!, $itemId: ID!, $completed: Boolean!) {
-        toggleItem(listId: $listId, itemId: $itemId, completed: $completed) {
-          id
-          completed
+      mutation($listId: ID!, $itemId: ID!, $completed: Boolean!, $user: UserInput!) {
+        toggleItem(listId: $listId, itemId: $itemId, completed: $completed, user: $user) {
+          id completed completedBy completedByAvatar
         }
       }
     `
     try {
       item.completed = newCompletedState
-      await gplClient(query, { listId, itemId, completed: newCompletedState })
+      if (newCompletedState) {
+        item.completedBy = userStore.user.username
+        item.completedByAvatar = userStore.user.avatar
+      } else {
+        item.completedBy = null
+        item.completedByAvatar = null
+      }
+
+      const user = { username: userStore.user.username, avatar: userStore.user.avatar }
+      await gplClient(query, { listId, itemId, completed: newCompletedState, user })
     } catch (e) {
       console.error('Failed to toggle item:', e)
       item.completed = !newCompletedState
@@ -235,115 +257,80 @@ export const useListStore = defineStore('list', () => {
 
   const saveEdit = async () => {
     if (!editingItem.value || !activeList.value) return
-
     const listId = activeList.value.id
     const itemId = editingItem.value.id
-    const { id, completed, __typename, ...itemInput } = editingItem.value
-
+    const { id, completed, addedBy, addedByAvatar, completedBy, completedByAvatar, __typename, ...itemInput } = editingItem.value
     try {
       if (!itemInput.imageUrl && itemInput.name) {
-        console.log(`🔍 Searching image for: ${itemInput.name}`)
-        const searchQuery = `
-          query($query: String!) {
-            searchImages(query: $query)
-          }
-        `
+        const searchQuery = `query($query: String!) { searchImages(query: $query) }`
         const searchData = await gplClient(searchQuery, { query: itemInput.name })
-
         if (searchData.searchImages && searchData.searchImages.length > 0) {
           itemInput.imageUrl = searchData.searchImages[0]
-          console.log(`🖼️ Image found: ${itemInput.imageUrl}`)
         }
       }
-
       const updateQuery = `
         mutation($listId: ID!, $itemId: ID!, $itemInput: UpdateItemInput!) {
           updateItem(listId: $listId, itemId: $itemId, itemInput: $itemInput) {
             id name quantity unit category dueDate comment priceStore1 priceStore2 userPrice completed imageUrl
+            addedBy addedByAvatar completedBy completedByAvatar
           }
         }
       `
       const data = await gplClient(updateQuery, { listId, itemId, itemInput })
-
       const index = activeList.value.items.findIndex((i) => i.id === itemId)
       if (index !== -1) {
         activeList.value.items[index] = data.updateItem
       }
       editingItem.value = null
-
     } catch (e) {
       console.error('Failed to update item:', e)
     }
   }
 
-  const startViewing = (item) => {
-    viewingItem.value = item
+  // --- НОВАЯ ФУНКЦИЯ ОТПРАВКИ СООБЩЕНИЯ ---
+  const sendMessage = async (text) => {
+    if (!activeList.value) return
+    const userStore = useUserStore()
+
+    const query = `
+      mutation($listId: ID!, $text: String!, $user: UserInput!) {
+        sendMessage(listId: $listId, text: $text, user: $user) {
+          id sender avatar text timestamp
+        }
+      }
+    `
+
+    try {
+      const user = { username: userStore.user.username, avatar: userStore.user.avatar }
+      const data = await gplClient(query, { listId: activeList.value.id, text, user })
+
+      // Оптимистичное добавление (сразу видим сообщение)
+      if (!activeList.value.messages) activeList.value.messages = []
+      activeList.value.messages.push(data.sendMessage)
+
+    } catch (e) {
+      console.error('Failed to send message', e)
+    }
   }
 
-  const cancelViewing = () => {
-    viewingItem.value = null
-  }
-
-  const startEditing = (item) => {
-    cancelViewing()
-    editingItem.value = { ...item }
-  }
-
-  const cancelEdit = () => {
-    editingItem.value = null
-  }
-
-  const selectList = (id) => {
-    activeListId.value = id
-  }
-
-  const backToListSelector = () => {
-    activeListId.value = null
-  }
-
-  const showAddItemForm = () => {
-    isAddItemFormVisible.value = true
-  }
-
-  const hideAddItemForm = () => {
-    isAddItemFormVisible.value = false
-  }
-
-  const toggleTotalsSidebar = () => {
-    isTotalsSidebarOpen.value = !isTotalsSidebarOpen.value
-  }
-
-  const closeTotalsSidebar = () => {
-    isTotalsSidebarOpen.value = false
-  }
+  const selectList = (id) => { activeListId.value = id }
+  const backToListSelector = () => { activeListId.value = null }
+  const startViewing = (item) => { viewingItem.value = item }
+  const cancelViewing = () => { viewingItem.value = null }
+  const startEditing = (item) => { cancelViewing(); editingItem.value = { ...item } }
+  const cancelEdit = () => { editingItem.value = null }
+  const showAddItemForm = () => { isAddItemFormVisible.value = true }
+  const hideAddItemForm = () => { isAddItemFormVisible.value = false }
+  const toggleTotalsSidebar = () => { isTotalsSidebarOpen.value = !isTotalsSidebarOpen.value }
+  const closeTotalsSidebar = () => { isTotalsSidebarOpen.value = false }
 
   return {
-    lists,
-    activeListId,
-    isLoading,
-    isShareModalOpen,
-    editingItem,
-    viewingItem,
-    isAddItemFormVisible,
-    isTotalsSidebarOpen,
-    activeList,
-    groupedItems,
-    totals,
-    fetchLists,
-    selectList,
-    backToListSelector,
-    createList,
-    addItem,
-    removeItem,
-    toggleItem,
-    startEditing,
-    saveEdit,
-    cancelEdit,
-    startViewing,
-    cancelViewing,
-    showAddItemForm,
-    hideAddItemForm,
-    toggleTotalsSidebar,
-    closeTotalsSidebar,
+    lists, activeListId, isLoading, isShareModalOpen, editingItem, viewingItem,
+    isAddItemFormVisible, isTotalsSidebarOpen, isAddingItem,
+    activeList, groupedItems, totals,
+    fetchLists, fetchListById, selectList, backToListSelector, createList, addItem,
+    removeItem, toggleItem, startEditing, saveEdit, cancelEdit, startViewing, cancelViewing,
+    showAddItemForm, hideAddItemForm, toggleTotalsSidebar, closeTotalsSidebar,
+    sendMessage // Экспортируем новую функцию
   }
 })

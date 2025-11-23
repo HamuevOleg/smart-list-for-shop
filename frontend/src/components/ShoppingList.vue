@@ -28,10 +28,27 @@
 </template>
 
 <script setup>
+import { onMounted, onUnmounted } from 'vue'
 import { useListStore } from '@/stores/listStore'
 import ShoppingListItem from './ShoppingListItem.vue'
 
 const store = useListStore()
+let pollingInterval = null
+
+onMounted(() => {
+  // Автообновление каждые 3 секунды
+  pollingInterval = setInterval(() => {
+    // Не обновляем, если добавляем товар или редактируем, чтобы не сбить фокус
+    if (store.activeListId && !store.editingItem && !store.isAddingItem) {
+      store.fetchListById(store.activeListId, { background: true })
+    }
+  }, 3000)
+})
+
+onUnmounted(() => {
+  // Очистка таймера
+  if (pollingInterval) clearInterval(pollingInterval)
+})
 </script>
 
 <style scoped>

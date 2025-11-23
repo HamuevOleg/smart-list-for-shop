@@ -100,9 +100,19 @@
           <input type="text" id="comment" v-model="item.comment" class="form-input" autocomplete="off" />
         </div>
 
-        <button type="submit" class="btn btn-primary btn-submit">
-          Add
+        <button
+          type="submit"
+          class="btn btn-primary btn-submit"
+          :disabled="store.isAddingItem"
+          :class="{ 'loading-btn': store.isAddingItem }"
+        >
+          <span v-if="!store.isAddingItem">Add</span>
+          <div v-else class="loading-content">
+            <span class="spinner"></span>
+            Processing AI...
+          </div>
         </button>
+
       </form>
     </section>
   </Transition>
@@ -131,10 +141,11 @@ const getInitialItem = () => ({
 
 const item = ref(getInitialItem())
 
-const handleSubmit = () => {
+const handleSubmit = async () => {
+  if (store.isAddingItem) return // Защита от кликов
   console.log('🚀 Submitting item:', item.value)
-  store.addItem(item.value)
-  item.value = getInitialItem()
+  await store.addItem(item.value)
+  item.value = getInitialItem() // Очищаем только после успеха
 }
 
 const formattedDate = computed(() => {
@@ -224,5 +235,38 @@ h2 {
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--text-light);
+}
+
+/* Стили для кнопки загрузки */
+.btn-submit {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 46px;
+}
+
+.loading-btn {
+  opacity: 0.8;
+  cursor: not-allowed;
+  background-color: #ff5577;
+}
+
+.loading-content {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 </style>

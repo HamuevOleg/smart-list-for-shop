@@ -52,9 +52,36 @@
       <div class="item-details">
         <span class="item-name">{{ item.name }}</span>
         <span class="item-quantity">{{ item.quantity }} {{ item.unit }}</span>
+
         <p v-if="item.comment" class="item-comment">
           {{ item.comment }}
         </p>
+
+        <div class="user-badges">
+          <div class="user-badge added" v-if="item.addedBy && !item.completed">
+            <span class="badge-avatar">
+              <img
+                v-if="isImage(item.addedByAvatar)"
+                :src="item.addedByAvatar"
+                class="mini-avatar-img"
+              />
+              <span v-else>{{ item.addedByAvatar || '👤' }}</span>
+            </span>
+            <span class="badge-name">Added by {{ item.addedBy }}</span>
+          </div>
+
+          <div class="user-badge completed" v-if="item.completed && item.completedBy">
+            <span class="badge-avatar">
+              <img
+                v-if="isImage(item.completedByAvatar)"
+                :src="item.completedByAvatar"
+                class="mini-avatar-img"
+              />
+              <span v-else>{{ item.completedByAvatar || '✅' }}</span>
+            </span>
+            <span class="badge-name">Done by {{ item.completedBy }}</span>
+          </div>
+        </div>
 
         <div class="item-prices" v-if="hasPrices">
           <span v-if="item.priceStore1" class="price store1">
@@ -91,10 +118,15 @@ const photoPlaceholder = computed(() => {
 const hasPrices = computed(() => {
   return props.item.priceStore1 || props.item.priceStore2 || props.item.userPrice
 })
+
+// Хелпер для проверки: это картинка (URL/Base64) или текст?
+const isImage = (avatarString) => {
+  if (!avatarString) return false
+  return avatarString.startsWith('http') || avatarString.startsWith('data:image')
+}
 </script>
 
 <style scoped>
-
 .list-item-card {
   position: relative;
   background: var(--list-item-color);
@@ -103,7 +135,7 @@ const hasPrices = computed(() => {
   border-radius: var(--border-radius);
   box-shadow: var(--shadow);
   transition: transform 0.3s ease-out;
-  cursor: pointer; /* <-- ДОБАВЛЕНО */
+  cursor: pointer;
 }
 
 .list-item-card:hover {
@@ -111,7 +143,7 @@ const hasPrices = computed(() => {
 }
 
 .list-item-card.completed {
-  opacity: 0.4;
+  opacity: 0.6;
   background: #334155;
   cursor: default;
 }
@@ -122,7 +154,6 @@ const hasPrices = computed(() => {
   text-decoration: line-through;
 }
 
-/* z-index, чтобы кнопки были над карточкой */
 .item-checkbox-wrapper {
   position: absolute;
   top: 1rem;
@@ -167,7 +198,7 @@ const hasPrices = computed(() => {
   color: white;
 }
 .btn-delete:hover {
-  background-color: #ef4444; /* Red */
+  background-color: #ef4444;
   color: white;
 }
 .btn-icon svg {
@@ -245,13 +276,47 @@ const hasPrices = computed(() => {
   font-size: 0.85rem;
   font-weight: 600;
 }
-.price.store1 {
-  color: #60a5fa;
+.price.store1 { color: #60a5fa; }
+.price.store2 { color: #f59e0b; }
+.price.user { color: #34d399; }
+
+/* СТИЛИ ДЛЯ БЕЙДЖЕЙ */
+.user-badges {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+  flex-wrap: wrap;
 }
-.price.store2 {
-  color: #f59e0b;
+.user-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px; /* Чуть увеличили отступ */
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-light);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
-.price.user {
-  color: #34d399;
+.user-badge.completed {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.3);
+  color: #6ee7b7;
+}
+.badge-avatar {
+  font-size: 0.9rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+}
+/* Стили для мини-аватарки */
+.mini-avatar-img {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.badge-name {
+  font-weight: 600;
 }
 </style>

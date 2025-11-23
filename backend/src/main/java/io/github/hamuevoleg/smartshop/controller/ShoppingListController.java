@@ -1,9 +1,6 @@
 package io.github.hamuevoleg.smartshop.controller;
 
-import io.github.hamuevoleg.smartshop.domain.AddItemInput;
-import io.github.hamuevoleg.smartshop.domain.ShoppingItem;
-import io.github.hamuevoleg.smartshop.domain.ShoppingList;
-import io.github.hamuevoleg.smartshop.domain.UpdateItemInput;
+import io.github.hamuevoleg.smartshop.domain.*;
 import io.github.hamuevoleg.smartshop.repository.ShoppingListRepository;
 import io.github.hamuevoleg.smartshop.service.GeminiService;
 import io.github.hamuevoleg.smartshop.service.ImageSearchService;
@@ -33,12 +30,40 @@ public class ShoppingListController {
         this.geminiService = geminiService;
     }
 
-    // ... (QueryMappings остаются без изменений) ...
     @QueryMapping
     public List<ShoppingList> allLists() { return repository.findAll(); }
 
     @QueryMapping
-    public Optional<ShoppingList> listById(@Argument String id) { return repository.findById(id); }
+    public ShoppingList listById(@Argument String id, @Argument UserInput user) {
+        ShoppingList list = repository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("List not found"));
+
+        // Если передан пользователь, обновляем его "пульс" (lastSeen)
+        if (user != null && user.getUsername() != null) {
+            long now = System.currentTimeMillis();
+
+            // 1. Удаляем старую запись об этом пользователе (если была)
+            if (list.getParticipants() != null) {
+                list.getParticipants().removeIf(p -> p.getUsername().equals(user.getUsername()));
+            }
+
+            // 2. Добавляем свежую запись
+            list.getParticipants().add(new ListParticipant(
+                    user.getUsername(),
+                    user.getAvatar(),
+                    String.valueOf(now)
+            ));
+
+            // 3. Очищаем "призраков" (тех, кого не было больше 1 часа), чтобы БД не пухла
+            long oneHourAgo = now - (60 * 60 * 1000);
+            list.getParticipants().removeIf(p -> Long.parseLong(p.getLastSeen()) < oneHourAgo);
+
+            // Сохраняем обновление списка участников
+            repository.save(list);
+        }
+
+        return list;
+    }
 
     @QueryMapping
     public List<String> searchImages(@Argument String query) {
@@ -53,7 +78,9 @@ public class ShoppingListController {
     }
 
     @MutationMapping
-    public ShoppingItem addItem(@Argument String listId, @Argument AddItemInput itemInput) {
+    public ShoppingItem addItem(@Argument String listId,
+                                @Argument AddItemInput itemInput,
+                                @Argument UserInput user) {
         ShoppingList list = findListById(listId);
 
         ShoppingItem newItem = new ShoppingItem();
@@ -69,15 +96,13 @@ public class ShoppingListController {
         }
         newItem.setCategory(category);
 
-        // 2. AI Цены (Парсинг)
-        // Если пользователь не ввел цены сам, пробуем узнать у AI
+        // 2. AI Цены
         if (itemInput.getPriceStore1() == null && itemInput.getPriceStore2() == null) {
             String aiResponse = geminiService.suggestPrices(itemInput.getName());
             if (!aiResponse.isEmpty()) {
                 parseAndSetPrices(newItem, aiResponse);
             }
         } else {
-            // Если пользователь ввел, берем их
             newItem.setPriceStore1(itemInput.getPriceStore1());
             newItem.setPriceStore2(itemInput.getPriceStore2());
         }
@@ -87,17 +112,22 @@ public class ShoppingListController {
         newItem.setUserPrice(itemInput.getUserPrice());
         newItem.setCompleted(false);
 
+        // 3. Сохраняем автора
+        if (user != null) {
+            newItem.setAddedBy(user.getUsername());
+            newItem.setAddedByAvatar(user.getAvatar());
+        }
+
         list.getItems().add(0, newItem);
         repository.save(list);
         return newItem;
     }
 
-    // ... (остальные методы updateItem, removeItem, toggleItem без изменений) ...
     @MutationMapping
     public ShoppingItem updateItem(@Argument String listId, @Argument String itemId, @Argument UpdateItemInput itemInput) {
         ShoppingList list = findListById(listId);
         ShoppingItem item = findItemById(list, itemId);
-        // ... код обновления полей ...
+
         if (itemInput.getName() != null) item.setName(itemInput.getName());
         if (itemInput.getQuantity() != null) item.setQuantity(itemInput.getQuantity());
         if (itemInput.getUnit() != null) item.setUnit(itemInput.getUnit());
@@ -122,12 +152,51 @@ public class ShoppingListController {
     }
 
     @MutationMapping
-    public ShoppingItem toggleItem(@Argument String listId, @Argument String itemId, @Argument Boolean completed) {
+    public ShoppingItem toggleItem(@Argument String listId,
+                                   @Argument String itemId,
+                                   @Argument Boolean completed,
+                                   @Argument UserInput user) {
         ShoppingList list = findListById(listId);
         ShoppingItem item = findItemById(list, itemId);
+
         item.setCompleted(completed);
+
+        if (completed && user != null) {
+            // Если выполнили - записываем кто
+            item.setCompletedBy(user.getUsername());
+            item.setCompletedByAvatar(user.getAvatar());
+        } else {
+            // Если отменили - очищаем поля
+            item.setCompletedBy(null);
+            item.setCompletedByAvatar(null);
+        }
+
         repository.save(list);
         return item;
+    }
+
+    @MutationMapping
+    public ChatMessage sendMessage(@Argument String listId,
+                                   @Argument String text,
+                                   @Argument UserInput user) {
+        ShoppingList list = findListById(listId);
+
+        ChatMessage msg = new ChatMessage(
+                UUID.randomUUID().toString(),
+                user.getUsername(),
+                user.getAvatar(),
+                text,
+                String.valueOf(System.currentTimeMillis())
+        );
+
+        list.getMessages().add(msg);
+
+        if (list.getMessages().size() > 500) {
+            list.getMessages().remove(0);
+        }
+
+        repository.save(list);
+        return msg;
     }
 
     private ShoppingList findListById(String listId) {
@@ -142,19 +211,13 @@ public class ShoppingListController {
                 .orElseThrow(() -> new IllegalArgumentException("Item not found: " + itemId));
     }
 
-    // === Парсер строки от AI ===
-    // Ожидаем формат: Shop1:Metro - Price:25.50; Shop2:Linella - Price:28.00;
     private void parseAndSetPrices(ShoppingItem item, String aiResponse) {
         try {
-            // Простой парсинг с регулярными выражениями для надежности
-            // Ищем число после "Metro - Price:"
             Double metroPrice = extractPrice(aiResponse, "Metro.*?Price:([\\d\\.]+)");
-            // Ищем число после "Linella - Price:"
             Double linellaPrice = extractPrice(aiResponse, "Linella.*?Price:([\\d\\.]+)");
 
             if (metroPrice != null) item.setPriceStore1(metroPrice);
             if (linellaPrice != null) item.setPriceStore2(linellaPrice);
-
         } catch (Exception e) {
             System.err.println("Failed to parse AI prices: " + aiResponse);
         }

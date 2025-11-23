@@ -13,4 +13,6 @@ public class ShoppingList {
     private String id;
     private String name;
     private List<ShoppingItem> items = new ArrayList<>();
+    private List<ListParticipant> participants = new ArrayList<>();
+    private List<ChatMessage> messages = new ArrayList<>();
 }

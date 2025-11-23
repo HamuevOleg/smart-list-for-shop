@@ -4,24 +4,29 @@
       <div class="modal-content">
         <button class="btn-close" @click="store.cancelViewing">×</button>
 
-        <img
-          v-if="store.viewingItem.imageUrl"
-          :src="store.viewingItem.imageUrl"
-          :alt="store.viewingItem.name"
-          class="detail-image"
-        />
-        <div v-else class="detail-image-placeholder">
-          <span>{{ store.viewingItem.name.substring(0, 2).toUpperCase() }}</span>
+        <div class="image-container">
+          <img
+            v-if="store.viewingItem.imageUrl"
+            :src="store.viewingItem.imageUrl"
+            :alt="store.viewingItem.name"
+            class="detail-image"
+          />
+          <div v-else class="detail-image-placeholder">
+            <span>{{ store.viewingItem.name.substring(0, 2).toUpperCase() }}</span>
+          </div>
         </div>
 
         <h2 class="detail-title">{{ store.viewingItem.name }}</h2>
 
         <div class="detail-subtitle">
-          <span v-if="store.viewingItem.quantity">
+          <span v-if="store.viewingItem.quantity" class="badge">
             {{ store.viewingItem.quantity }} {{ store.viewingItem.unit }}
           </span>
-          <span v-if="store.viewingItem.category">
+          <span v-if="store.viewingItem.category" class="badge category">
             {{ store.viewingItem.category }}
+          </span>
+          <span v-if="formattedDueDate" class="badge date">
+            📅 {{ formattedDueDate }}
           </span>
         </div>
 
@@ -62,40 +67,53 @@ import { useListStore } from '@/stores/listStore'
 
 const store = useListStore()
 
-// Проверяем, есть ли хотя бы одна цена для отображения
+// Форматирование даты: YYYY-MM-DD -> DD.MM.YYYY
+const formattedDueDate = computed(() => {
+  const date = store.viewingItem?.dueDate
+  if (!date) return null
+
+  // Простая защита от некорректного формата
+  const parts = date.split('-')
+  if (parts.length !== 3) return date
+
+  const [y, m, d] = parts
+  return `${d}.${m}.${y}`
+})
+
 const hasPrices = computed(() => {
-  if (!store.viewingItem.value) return false
-  return store.viewingItem.value.priceStore1 ||
-    store.viewingItem.value.priceStore2 ||
-    store.viewingItem.value.userPrice
+  if (!store.viewingItem) return false
+  return store.viewingItem.priceStore1 ||
+    store.viewingItem.priceStore2 ||
+    store.viewingItem.userPrice
 })
 </script>
 
 <style scoped>
-/* Стили модалки (похожи на EditModal) */
 .modal-backdrop {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.7); /* Темнее для фокуса */
+  background-color: rgba(0, 0, 0, 0.8); /* Чуть темнее */
   backdrop-filter: blur(5px);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 100;
 }
+
 .modal-content {
   background: var(--card-color);
   padding: 2rem;
   border-radius: var(--border-radius);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); /* Тень посильнее */
   width: 90%;
-  max-width: 450px; /* Узкая модалка для просмотра */
+  max-width: 450px;
   position: relative;
   border-top: 4px solid var(--primary-color);
 }
+
 .btn-close {
   position: absolute;
   top: 1rem;
@@ -105,20 +123,32 @@ const hasPrices = computed(() => {
   font-size: 1.5rem;
   cursor: pointer;
   color: var(--text-light);
+  z-index: 2; /* Чтобы кнопка была поверх картинки, если что */
 }
 
-/* Стили для картинки */
-.detail-image, .detail-image-placeholder {
+/* --- ИСПРАВЛЕНИЕ КАРТИНКИ --- */
+.image-container {
   width: 100%;
-  height: 250px; /* Большая высота */
+  height: 250px; /* Фиксированная высота контейнера */
+  background-color: #0a0a0a; /* Темный фон для letterbox полос */
   border-radius: 8px;
   margin-bottom: 1.5rem;
-  background-color: var(--bg-input);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
 }
+
 .detail-image {
-  object-fit: cover; /* Масштабируем красиво */
+  width: 100%;
+  height: 100%;
+  object-fit: contain; /* <<< ГЛАВНОЕ ИЗМЕНЕНИЕ: Картинка вписывается целиком */
 }
+
 .detail-image-placeholder {
+  width: 100%;
+  height: 100%;
+  background-color: var(--bg-input);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -127,37 +157,67 @@ const hasPrices = computed(() => {
   color: var(--primary-color);
 }
 
-/* Стили для текста */
+/* Тексты */
 .detail-title {
-  font-family: "Kumbh Sans", sans-serif; /* Наш кастомный шрифт */
+  font-family: "Kumbh Sans", sans-serif;
   font-size: 2rem;
   font-weight: 700;
   color: #fff;
-  margin: 0;
+  margin: 0 0 0.5rem 0;
+  line-height: 1.1;
 }
+
 .detail-subtitle {
   display: flex;
-  gap: 1rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
   font-size: 1rem;
   color: var(--text-light);
   margin-bottom: 1.5rem;
 }
+
+/* Бейджи */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-light);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.badge.category {
+  color: var(--primary-color);
+  background: rgba(255, 51, 102, 0.1);
+  border-color: rgba(255, 51, 102, 0.2);
+}
+
+.badge.date {
+  color: #fbbf24; /* Желтый */
+  background: rgba(251, 191, 36, 0.1);
+  border-color: rgba(251, 191, 36, 0.2);
+}
+
 .detail-comment {
   font-family: "Kumbh Sans", sans-serif;
   font-size: 1.1rem;
-  color: #fff;
+  color: #e2e8f0;
   background: var(--bg-input);
   padding: 1rem;
   border-radius: 8px;
   margin-bottom: 1.5rem;
-  white-space: pre-wrap; /* Сохраняем переносы строк */
+  white-space: pre-wrap;
+  border-left: 3px solid var(--text-light);
 }
 
-/* Стили для цен */
+/* Цены */
 .detail-prices {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.75rem;
   margin-bottom: 2rem;
   padding-top: 1rem;
   border-top: 1px solid var(--border-color);
@@ -179,7 +239,9 @@ const hasPrices = computed(() => {
 .price-value.user { color: #34d399; }
 
 .btn-edit {
-  width: 100%; /* Кнопка во всю ширину */
+  width: 100%;
+  font-size: 1.1rem;
+  padding: 0.8rem;
 }
 
 /* Анимация */

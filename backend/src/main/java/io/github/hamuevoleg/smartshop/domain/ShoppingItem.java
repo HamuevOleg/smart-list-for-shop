@@ -12,10 +12,15 @@ public class ShoppingItem {
     private String unit;
     private String category;
     private String dueDate;
-    private String comment; // Добавлено поле
+    private String comment;
     private Double priceStore1;
     private Double priceStore2;
     private Double userPrice;
     private boolean completed = false;
-    private String imageUrl; // Добавлено поле
+    private String imageUrl;
+
+    private String addedBy;
+    private String addedByAvatar;
+    private String completedBy;
+    private String completedByAvatar;
 }

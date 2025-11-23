@@ -4,39 +4,42 @@
   <div id="app-container" :class="{ 'sidebar-open': isTotalsSidebarOpen }">
 
     <div id="app-wrapper">
-      <ListSelector v-if="!activeListId" />
 
-      <div v-else class="list-view">
-        <UserHeader />
+      <UserHeader v-if="route.name === 'list'" />
 
-        <main>
-          <div class="add-item-toggle" v-if="!store.isAddItemFormVisible">
-            <button class="btn btn-primary" @click="store.showAddItemForm">
-              + Add item
-            </button>
-          </div>
+      <main>
+        <div class="add-item-toggle" v-if="route.name === 'list' && !store.isAddItemFormVisible">
+          <button class="btn btn-primary" @click="store.showAddItemForm">
+            + Add item
+          </button>
+        </div>
 
-          <AddItemForm />
+        <AddItemForm v-if="route.name === 'list'" />
 
-          <ShoppingList />
-        </main>
-
-      </div>
+        <router-view v-slot="{ Component }">
+          <Transition name="fade" mode="out-in">
+            <component :is="Component" />
+          </Transition>
+        </router-view>
+      </main>
 
       <ShareModal />
       <EditModal />
       <ItemDetailModal />
+      <WelcomeModal />
+      <ChatWidget v-if="route.name === 'list'" />
+
     </div>
 
     <button
-      v-if="activeListId && !store.isAddItemFormVisible"
+      v-if="route.name === 'list' && !store.isAddItemFormVisible"
       class="btn-fab-totals"
       @click="store.toggleTotalsSidebar"
       :class="{ hidden: isTotalsSidebarOpen }"
     >
-      <span>Result:</span>
-      <strong>{{ cheapestTotal }}</strong>
-      <span>Lei</span>
+      <span class="label">Total:</span>
+      <span class="value">{{ cheapestTotal }}</span>
+      <span class="currency">MDL</span>
     </button>
 
     <TotalsSidebar />
@@ -44,27 +47,39 @@
 </template>
 
 <script setup>
-import { computed } from 'vue' // <-- ДОБАВЛЕН
+import { computed, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useListStore } from '@/stores/listStore'
 import { useGalaxyBackground } from '@/composables/useGalaxyBackground'
+import { useRoute, useRouter } from 'vue-router'
 
-// Импорты компонентов
-import ListSelector from './components/ListSelector.vue'
 import UserHeader from './components/UserHeader.vue'
 import AddItemForm from './components/AddItemForm.vue'
-import ShoppingList from './components/ShoppingList.vue'
 import ShareModal from './components/ShareModal.vue'
 import EditModal from './components/EditModal.vue'
-import TotalsSidebar from './components/TotalsSidebar.vue' // <-- ДОБАВЛЕН
+import TotalsSidebar from './components/TotalsSidebar.vue'
 import ItemDetailModal from './components/ItemDetailModal.vue'
+import WelcomeModal from './components/WelcomeModal.vue'
+import ChatWidget from './components/ChatWidget.vue'
 
 const store = useListStore()
-// V СТРОКА ОБНОВЛЕНА V
 const { activeListId, isTotalsSidebarOpen, totals } = storeToRefs(store)
 
-// V ДОБАВЛЕН БЛОК ДЛЯ КНОПКИ V
-// Считаем минимальную цену для отображения на кнопке
+const route = useRoute()
+const router = useRouter()
+
+watch(activeListId, (newId) => {
+  if (newId) {
+    router.push(`/list/${newId}`)
+  } else {
+    router.push('/')
+  }
+})
+
+store.backToListSelector = () => {
+  store.activeListId = null
+}
+
 const cheapestTotal = computed(() => {
   const total1 = parseFloat(totals.value.store1)
   const total2 = parseFloat(totals.value.store2)
@@ -72,11 +87,9 @@ const cheapestTotal = computed(() => {
   if (total1 > 0 && total2 > 0) {
     return Math.min(total1, total2).toFixed(2)
   }
-  // Если есть только одна цена, показываем ее
   return (total1 || total2).toFixed(2)
 })
 
-// ... твой useGalaxyBackground ...
 const { canvasRef } = useGalaxyBackground({
   focal: [0.5, 0.5],
   rotation: [1.0, 0.0],
@@ -104,49 +117,43 @@ const { canvasRef } = useGalaxyBackground({
   z-index: -1;
 }
 
-/* * НОВЫЕ ГЛОБАЛЬНЫЕ СТИЛИ ДЛЯ LAYOUT-А
- */
 #app-container {
-  /* Это новый главный контейнер.
-    Мы используем `display: flex` для выравнивания
-    #app-wrapper и #app-sidebar (когда он появится).
-    Но по умолчанию #app-wrapper просто центрируется.
-  */
   display: flex;
   justify-content: center;
 }
 
 #app-wrapper {
   max-width: 800px;
-  width: 100%; /* Добавляем, чтобы wrapper занимал место */
+  width: 100%;
   margin: 0 auto;
   padding: 2rem 1rem;
   position: relative;
   z-index: 1;
-  /* ПЛАВНЫЙ ПЕРЕХОД */
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
-/* * Вот та самая "магия", которую ты просил.
- * Когда сайдбар открыт...
- */
 #app-container.sidebar-open #app-wrapper {
-  /* ...мы сдвигаем контент влево. */
-  transform: translateX(-160px); /* 320px (ширина сайдбара) / 2 */
-  /* ...и плавно уменьшаем его */
+  transform: translateX(-160px);
   max-width: 600px;
   opacity: 0.8;
 }
 
 @media (max-width: 900px) {
-  /* На мобилках не будем сдвигать, а просто затемним */
   #app-container.sidebar-open #app-wrapper {
     transform: translateX(0);
-    max-width: 800px; /* оставим как есть */
+    max-width: 800px;
     opacity: 0.5;
-    /* Можно добавить блюр */
     filter: blur(2px);
   }
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>
 
@@ -163,47 +170,79 @@ const { canvasRef } = useGalaxyBackground({
   max-width: 400px;
 }
 
-/*
- * V ДОБАВЛЕНЫ СТИЛИ ДЛЯ КНОПКИ (FAB) V
- */
+/* --- НОВЫЙ СТИЛЬ КНОПКИ --- */
 .btn-fab-totals {
   position: fixed;
   bottom: 2rem;
-  right: 2rem;
-  z-index: 50; /* Выше контента, но ниже сайдбара */
+  left: 2rem; /* Перенесли ВЛЕВО */
+  right: auto; /* Сбросили правое позиционирование */
+  z-index: 50;
 
-  background-color: var(--primary-color);
-  color: #111; /* Темный текст для контраста */
-  border: none;
-  border-radius: 50px; /* Делаем овальной/круглой */
-  padding: 0.75rem 1.5rem;
-  font-size: 1rem;
-  font-weight: 600;
+  /* Glassmorphism эффект */
+  background: rgba(26, 15, 31, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--primary-color);
+  color: #fff;
+
+  border-radius: 16px;
+  padding: 0.8rem 1.5rem;
+  font-size: 1.1rem;
   cursor: pointer;
-  /* Тень в цвет нашего неона */
-  box-shadow: 0 8px 25px rgba(0, 240, 255, 0.3);
+
+  /* Неоновое свечение */
+  box-shadow: 0 0 20px rgba(255, 51, 102, 0.15),
+  inset 0 0 20px rgba(255, 51, 102, 0.05);
 
   display: flex;
-  align-items: center;
+  align-items: baseline;
   gap: 0.5rem;
-
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
 .btn-fab-totals:hover {
-  background-color: var(--primary-hover);
-  box-shadow: 0 10px 30px rgba(0, 240, 255, 0.4);
-  transform: translateY(-3px);
+  background: rgba(255, 51, 102, 0.15);
+  box-shadow: 0 0 30px rgba(255, 51, 102, 0.3);
+  transform: translateY(-3px) scale(1.02);
+  border-color: var(--primary-hover);
 }
 
-/* Прячем кнопку, когда сайдбар открыт */
+/* Скрываем, когда открыт сайдбар */
 .btn-fab-totals.hidden {
-  transform: scale(0.5) translateY(150px);
+  transform: translateX(-100px) scale(0.8);
   opacity: 0;
 }
 
-.btn-fab-totals span {
-  opacity: 0.8;
+/* Типографика внутри кнопки */
+.btn-fab-totals .label {
+  font-size: 0.9rem;
+  color: var(--text-light);
   font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.btn-fab-totals .value {
+  font-weight: 800;
+  font-size: 1.4rem;
+  color: var(--primary-color);
+  text-shadow: 0 0 10px rgba(255, 51, 102, 0.4);
+}
+
+.btn-fab-totals .currency {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+/* Адаптив для мобильных: кнопка снизу слева может мешать, подвинем чуть выше или уменьшим */
+@media (max-width: 600px) {
+  .btn-fab-totals {
+    bottom: 1.5rem;
+    left: 1.5rem;
+    padding: 0.6rem 1.2rem;
+  }
+  .btn-fab-totals .value {
+    font-size: 1.2rem;
+  }
 }
 </style>

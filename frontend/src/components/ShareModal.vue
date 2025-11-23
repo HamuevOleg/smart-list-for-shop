@@ -4,21 +4,29 @@
       <button class="btn-close" @click="close">×</button>
       <h2>Share the list</h2>
       <p>Send this link to your friends so they can join the list:</p>
+
       <div class="share-link-wrapper">
-        <input type="text" :value="fakeLink" readonly class="form-input" />
+        <input type="text" :value="shareLink" readonly class="form-input" />
         <button class="btn btn-primary" @click="copyLink">Copy</button>
       </div>
+
       <p v-if="copied" class="copy-success">Copied!</p>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useListStore } from '@/stores/listStore'
 
 const store = useListStore()
-const fakeLink = 'https://my-shop-list.com/list/xyz123' // Заглушка
+
+// Вычисляем ссылку на основе текущего домена и ID списка
+const shareLink = computed(() => {
+  if (!store.activeListId) return ''
+  return `${window.location.origin}/list/${store.activeListId}`
+})
+
 const copied = ref(false)
 
 const close = () => {
@@ -27,7 +35,8 @@ const close = () => {
 }
 
 const copyLink = () => {
-  navigator.clipboard.writeText(fakeLink).then(() => {
+  if (!shareLink.value) return
+  navigator.clipboard.writeText(shareLink.value).then(() => {
     copied.value = true
     setTimeout(() => (copied.value = false), 2000)
   })
@@ -82,6 +91,7 @@ h2 {
 
 .share-link-wrapper .form-input {
   background: var(--bg-color);
+  color: var(--text-color);
 }
 
 .copy-success {
