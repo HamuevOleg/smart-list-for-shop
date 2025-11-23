@@ -31,15 +31,15 @@
 
         <div class="detail-prices" v-if="hasPrices">
           <div class="price-row" v-if="store.viewingItem.priceStore1">
-            <span class="price-label">Магазин 1:</span>
+            <span class="price-label">Metro Price</span>
             <span class="price-value store1">{{ store.viewingItem.priceStore1.toFixed(2) }} Lei</span>
           </div>
           <div class="price-row" v-if="store.viewingItem.priceStore2">
-            <span class="price-label">Магазин 2:</span>
+            <span class="price-label">Linella Price:</span>
             <span class="price-value store2">{{ store.viewingItem.priceStore2.toFixed(2) }} Lei</span>
           </div>
           <div class="price-row" v-if="store.viewingItem.userPrice">
-            <span class="price-label">Моя цена:</span>
+            <span class="price-label">My Price:</span>
             <span class="price-value user">{{ store.viewingItem.userPrice.toFixed(2) }} Lei</span>
           </div>
         </div>
@@ -48,7 +48,7 @@
           class="btn btn-primary btn-edit"
           @click="store.startEditing(store.viewingItem)"
         >
-          Редактировать
+          Edit
         </button>
 
       </div>

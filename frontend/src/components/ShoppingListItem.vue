@@ -64,7 +64,7 @@
             M2: {{ item.priceStore2 }}
           </span>
           <span v-if="item.userPrice" class="price user">
-            Моя: {{ item.userPrice }}
+            My: {{ item.userPrice }}
           </span>
         </div>
       </div>

@@ -17,7 +17,7 @@
 
     <nav class="header-nav">
       <a class="nav-tab active" @click.prevent="store.backToListSelector">
-        Списки
+        Lists
       </a>
       <a class="nav-tab disabled" href="#">
         Receipts (soon)

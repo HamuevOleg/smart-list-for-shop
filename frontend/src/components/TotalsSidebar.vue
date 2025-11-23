@@ -7,7 +7,7 @@
     >
       <div class="sidebar-content">
         <header class="sidebar-header">
-          <h2>Итоги по ценам</h2>
+          <h2>Price Summary</h2>
           <button class="btn-close" @click="store.closeTotalsSidebar">×</button>
         </header>
 
@@ -24,7 +24,7 @@
             <span class="store-name">Difference:</span>
             <span class="price" :class="diffClass">{{ store.totals.diff }}</span>
           </div>
-          <p class="totals-info">* Уonly unpurchased goods are taken into account.</p>
+          <p class="totals-info">* Only unpurchased goods are taken into account.</p>
         </div>
       </div>
     </div>

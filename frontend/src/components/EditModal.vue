@@ -59,11 +59,11 @@
             </div>
 
             <div class="form-group">
-              <label>Срок (до)</label>
+              <label>Due Date</label>
               <PopoverWrapper>
                 <template #trigger>
                   <button type="button" class="form-input popover-trigger">
-                    <span>{{ formattedDate(store.editingItem.dueDate) || 'Не указан' }}</span>
+                    <span>{{ formattedDate(store.editingItem.dueDate) || 'Not Set' }}</span>
                     <span>📅</span>
                   </button>
                 </template>
@@ -79,15 +79,15 @@
 
           <div class="form-row prices">
             <div class="form-group">
-              <label for="edit-price1">Цена (Магаз 1)</label>
+              <label for="edit-price1">Metro Price</label>
               <input type="number" step="0.01" id="edit-price1" v-model.number="store.editingItem.priceStore1" class="form-input" />
             </div>
             <div class="form-group">
-              <label for="edit-price2">Цена (Магаз 2)</label>
+              <label for="edit-price2">Linella Price</label>
               <input type="number" step="0.01" id="edit-price2" v-model.number="store.editingItem.priceStore2" class="form-input" />
             </div>
             <div class="form-group">
-              <label for="edit-userPrice">Моя цена</label>
+              <label for="edit-userPrice">My Price</label>
               <input type="number" step="0.01" id="edit-userPrice" v-model.number="store.editingItem.userPrice" class="form-input" />
             </div>
           </div>
@@ -97,7 +97,7 @@
             <input type="text" id="edit-comment" v-model="store.editingItem.comment" class="form-input" autocomplete="off" />
           </div>
 
-          <button type="submit" class="btn btn-primary btn-submit">Сохранить</button>
+          <button type="submit" class="btn btn-primary btn-submit">Save</button>
         </form>
       </div>
     </div>
