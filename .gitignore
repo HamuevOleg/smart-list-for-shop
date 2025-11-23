@@ -1,4 +1,20 @@
-# --- SYSTEM & IDE (Мусор от ОС и редакторов) ---
+# --- 1. SECRETS & CREDENTIALS (САМОЕ ВАЖНОЕ) ---
+# Игнорируем любые файлы с 'credentials' или 'secret' в названии
+*credentials*.json
+*secret*.json
+*credentials*.xml
+*secret*.properties
+*.p12
+*.key
+
+# Конкретно наши файлы конфигурации с ключами
+backend/src/main/resources/application.properties
+# Если используешь .env файлы
+.env
+.env.local
+.env.*.local
+
+# --- 2. SYSTEM & IDE ---
 .DS_Store
 Thumbs.db
 .idea/
@@ -8,35 +24,21 @@ Thumbs.db
 *.njsproj
 *.sln
 *.sw?
-*.local
 
-# --- LOGS (Логи) ---
-logs/
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-
-# --- SECRETS (Самое важное!) ---
-# Игнорируем файлы ключей для Vertex AI и Google Cloud
-credentials.json
-**/credentials.json
-backend/credentials.json
-
-# Игнорируем локальные настройки (если появятся)
-.env.local
-.env.*.local
-backend/src/main/resources/application-secret.properties
-
-# --- BACKEND (Java / Spring Boot / Gradle) ---
+# --- 3. BACKEND (Java / Spring Boot / Gradle) ---
 .gradle/
 build/
 out/
 bin/
 !gradle/wrapper/gradle-wrapper.jar
-# Игнорируем временные файлы Eclipse/IntelliJ
+
+# Логи и временные файлы
+logs/
+*.log
+*.bak
+*.tmp
+
+# Настройки Eclipse/IntelliJ/VSCode
 .apt_generated
 .classpath
 .factorypath
@@ -44,22 +46,21 @@ bin/
 .settings
 .springBeans
 .sts4-cache
-# Игнорируем скомпилированные классы, если они вдруг выпали
-*.class
 
-# --- FRONTEND (Vue / Node.js) ---
+# --- 4. FRONTEND (Vue / Node.js) ---
 node_modules/
 dist/
 dist-ssr/
 coverage/
 .sass-cache/
-# Cypress видео и скриншоты
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Cypress и тесты
 /cypress/videos/
 /cypress/screenshots/
+
 # TypeScript кэш
 *.tsbuildinfo
-
-# --- MISC ---
-# Бэкапы и временные файлы
-*.bak
-*.tmp
