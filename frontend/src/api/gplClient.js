@@ -1,6 +1,6 @@
 // Адрес твоего Spring Boot сервера
 // ВАЖНО: Заменили localhost на твой локальный IP
-const API_URL = 'http://192.168.0.91:8080/graphql'
+const API_URL = 'http://192.168.59.164:8080/graphql'
 
 /**
  * Простой GraphQL-клиент

@@ -1,52 +1,69 @@
 <template>
-  <div class="chat-widget" :class="{ open: isOpen }">
-    <div class="chat-header" @click="toggleChat">
-      <div class="header-title">
-        <span>💬 List Chat</span>
-        <span class="badge" v-if="!isOpen && unreadCount > 0">{{ unreadCount }}</span>
-      </div>
-      <button class="btn-toggle">{{ isOpen ? '▼' : '▲' }}</button>
-    </div>
+  <div>
+    <button
+      class="mobile-chat-btn"
+      @click="toggleChat"
+      :class="{ hidden: isOpen }"
+      v-if="isMobile"
+    >
+      <span class="icon">💬</span>
+      <span class="badge" v-if="unreadCount > 0">{{ unreadCount }}</span>
+    </button>
 
-    <div class="chat-body" v-if="isOpen" ref="chatBodyRef">
-      <div v-if="messages.length === 0" class="empty-chat">
-        No messages yet. Say hi! 👋
-      </div>
+    <div class="chat-widget" :class="{ open: isOpen, 'mobile-fullscreen': isMobile }">
 
-      <div
-        v-for="msg in messages"
-        :key="msg.id"
-        class="message"
-        :class="{ 'my-message': isMe(msg.sender) }"
-      >
-        <div class="msg-avatar" v-if="!isMe(msg.sender)">
-          <img v-if="isImage(msg.avatar)" :src="msg.avatar" class="img-ava" />
-          <span v-else>{{ msg.avatar }}</span>
+      <div class="chat-header" @click="handleHeaderClick">
+        <div class="header-title">
+          <span>💬 List Chat</span>
+          <span class="badge" v-if="!isOpen && !isMobile && unreadCount > 0">{{ unreadCount }}</span>
         </div>
 
-        <div class="msg-content">
-          <div class="msg-name" v-if="!isMe(msg.sender)">{{ msg.sender }}</div>
-          <div class="msg-bubble">
-            {{ msg.text }}
+        <button class="btn-toggle" @click.stop="toggleChat">
+          {{ isMobile ? '✕' : (isOpen ? '▼' : '▲') }}
+        </button>
+      </div>
+
+      <div class="chat-body" v-if="isOpen" ref="chatBodyRef">
+        <div v-if="messages.length === 0" class="empty-chat">
+          No messages yet. Say hi! 👋
+        </div>
+
+        <div
+          v-for="msg in messages"
+          :key="msg.id"
+          class="message"
+          :class="{ 'my-message': isMe(msg.sender) }"
+        >
+          <div class="msg-avatar" v-if="!isMe(msg.sender)">
+            <img v-if="isImage(msg.avatar)" :src="msg.avatar" class="img-ava" />
+            <span v-else>{{ msg.avatar }}</span>
           </div>
-          <div class="msg-time">{{ formatTime(msg.timestamp) }}</div>
+
+          <div class="msg-content">
+            <div class="msg-name" v-if="!isMe(msg.sender)">{{ msg.sender }}</div>
+            <div class="msg-bubble">
+              {{ msg.text }}
+            </div>
+            <div class="msg-time">{{ formatTime(msg.timestamp) }}</div>
+          </div>
         </div>
       </div>
-    </div>
 
-    <form class="chat-footer" v-if="isOpen" @submit.prevent="send">
-      <input
-        v-model="newMessage"
-        placeholder="Type a message..."
-        class="chat-input"
-      />
-      <button type="submit" class="btn-send">➤</button>
-    </form>
+      <form class="chat-footer" v-if="isOpen" @submit.prevent="send">
+        <input
+          v-model="newMessage"
+          placeholder="Type a message..."
+          class="chat-input"
+          ref="inputRef"
+        />
+        <button type="submit" class="btn-send">➤</button>
+      </form>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, watch, nextTick } from 'vue'
+import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { useListStore } from '@/stores/listStore'
 import { useUserStore } from '@/stores/userStore'
 
@@ -56,7 +73,10 @@ const userStore = useUserStore()
 const isOpen = ref(false)
 const newMessage = ref('')
 const chatBodyRef = ref(null)
+const inputRef = ref(null)
 const lastReadCount = ref(0)
+// Состояние для определения мобилки через JS (для v-if)
+const isMobile = ref(window.innerWidth <= 600)
 
 const messages = computed(() => store.activeList?.messages || [])
 
@@ -65,15 +85,32 @@ const unreadCount = computed(() => {
 })
 
 const isMe = (sender) => sender === userStore.user.username
-
-// Проверка на картинку
 const isImage = (avatar) => avatar && (avatar.startsWith('http') || avatar.startsWith('data:image'))
+
+// Следим за ресайзом окна
+const updateIsMobile = () => {
+  isMobile.value = window.innerWidth <= 600
+}
+onMounted(() => window.addEventListener('resize', updateIsMobile))
+onUnmounted(() => window.removeEventListener('resize', updateIsMobile))
 
 const toggleChat = () => {
   isOpen.value = !isOpen.value
   if (isOpen.value) {
     scrollToBottom()
     lastReadCount.value = messages.value.length
+    // Фокус на поле ввода (удобно на десктопе, на мобилке может вызвать клавиатуру сразу)
+    if (!isMobile.value) {
+      setTimeout(() => inputRef.value?.focus(), 100)
+    }
+  }
+}
+
+// На десктопе клик по хедеру открывает/закрывает.
+// На мобилке хедер только для закрытия через крестик или заголовок.
+const handleHeaderClick = () => {
+  if (!isMobile.value) {
+    toggleChat()
   }
 }
 
@@ -82,6 +119,10 @@ const send = async () => {
   await store.sendMessage(newMessage.value)
   newMessage.value = ''
   scrollToBottom()
+  // На мобилке оставляем фокус, чтобы писать дальше
+  if (isMobile.value) {
+    inputRef.value?.focus()
+  }
 }
 
 const scrollToBottom = async () => {
@@ -91,7 +132,6 @@ const scrollToBottom = async () => {
   }
 }
 
-// Авто-скролл если чат открыт и пришло новое сообщение
 watch(() => messages.value.length, (newLen) => {
   if (isOpen.value) {
     scrollToBottom()
@@ -106,6 +146,7 @@ const formatTime = (ts) => {
 </script>
 
 <style scoped>
+/* --- DESKTOP STYLES (Default) --- */
 .chat-widget {
   position: fixed;
   bottom: 0;
@@ -120,8 +161,7 @@ const formatTime = (ts) => {
   border: 1px solid var(--border-color);
   border-bottom: none;
   transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-  /* Свернутое состояние: оставляем только хедер */
-  transform: translateY(calc(100% - 50px));
+  transform: translateY(calc(100% - 50px)); /* Свернут */
 }
 
 .chat-widget.open {
@@ -140,6 +180,7 @@ const formatTime = (ts) => {
   cursor: pointer;
   border-radius: 15px 15px 0 0;
   font-weight: 700;
+  flex-shrink: 0;
 }
 
 .badge {
@@ -168,8 +209,7 @@ const formatTime = (ts) => {
 }
 
 .empty-chat {
-  text-align: center; color: var(--text-light); margin-top: 2rem; font-style: italic;
-  opacity: 0.7;
+  text-align: center; color: var(--text-light); margin-top: 2rem; font-style: italic; opacity: 0.7;
 }
 
 .message {
@@ -196,9 +236,7 @@ const formatTime = (ts) => {
 }
 .img-ava { width: 100%; height: 100%; object-fit: cover; }
 
-.msg-content {
-  display: flex; flex-direction: column;
-}
+.msg-content { display: flex; flex-direction: column; }
 
 .msg-name {
   font-size: 0.75rem; color: var(--text-light); margin-bottom: 3px; margin-left: 4px;
@@ -209,7 +247,7 @@ const formatTime = (ts) => {
   background: var(--card-color);
   padding: 0.6rem 0.9rem;
   border-radius: 12px;
-  border-top-left-radius: 2px; /* Хвостик слева */
+  border-top-left-radius: 2px;
   font-size: 0.95rem;
   border: 1px solid var(--border-color);
   word-break: break-word;
@@ -222,7 +260,7 @@ const formatTime = (ts) => {
   color: #fff;
   border: none;
   border-radius: 12px;
-  border-top-right-radius: 2px; /* Хвостик справа */
+  border-top-right-radius: 2px;
   box-shadow: 0 4px 10px rgba(255, 51, 102, 0.3);
 }
 
@@ -236,6 +274,7 @@ const formatTime = (ts) => {
   display: flex;
   gap: 0.5rem;
   border-top: 1px solid var(--border-color);
+  flex-shrink: 0;
 }
 
 .chat-input {
@@ -261,19 +300,88 @@ const formatTime = (ts) => {
   font-size: 1.1rem;
   transition: transform 0.1s;
 }
-.btn-send:hover { transform: scale(1.05); }
-.btn-send:active { transform: scale(0.95); }
 
-/* Адаптив для мобилок */
+/* --- MOBILE STYLES --- */
 @media (max-width: 600px) {
-  .chat-widget {
-    width: 100%;
-    right: 0;
-    bottom: 0;
-    border-radius: 16px 16px 0 0;
+  /* 1. Кнопка FAB для открытия */
+  .mobile-chat-btn {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary-color), #f43f5e);
+    border: none;
+    box-shadow: 0 4px 15px rgba(255, 51, 102, 0.4);
+    z-index: 195; /* Чуть ниже самого чата */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: transform 0.3s ease, opacity 0.3s ease;
   }
-  .chat-widget.open {
-    height: 50vh; /* Половина экрана на мобилке */
+  .mobile-chat-btn:active { transform: scale(0.9); }
+  .mobile-chat-btn.hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.5);
+  }
+  .mobile-chat-btn .icon { font-size: 1.8rem; }
+  .mobile-chat-btn .badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #fff;
+    color: var(--primary-color);
+    border-radius: 10px;
+    padding: 2px 6px;
+    font-size: 0.8rem;
+    border: 2px solid var(--primary-color);
+  }
+
+  /* 2. Контейнер чата на мобильном */
+  .chat-widget.mobile-fullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%; /* На весь экран */
+    bottom: auto;
+    right: auto;
+    border-radius: 0;
+    transform: translateY(100%); /* По умолчанию скрыт вниз */
+    transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    z-index: 2000; /* Самый верхний слой */
+  }
+
+  .chat-widget.mobile-fullscreen.open {
+    transform: translateY(0);
+  }
+
+  .chat-header {
+    padding: 1rem;
+    height: 60px; /* Чуть выше для пальца */
+  }
+
+  .btn-toggle {
+    font-size: 1.5rem; /* Крестик покрупнее */
+    padding: 10px;
+  }
+
+  /* 3. Увеличение шрифта для iOS (от 16px зум не срабатывает) */
+  .chat-input {
+    font-size: 16px;
+    padding: 12px;
+  }
+
+  .msg-bubble {
+    font-size: 16px; /* Текст сообщений тоже читабельнее */
+  }
+
+  /* Поднимаем футер, если клавиатура открывается (частично решает браузер, но margin не помешает) */
+  .chat-footer {
+    padding-bottom: max(0.8rem, env(safe-area-inset-bottom));
   }
 }
 </style>
