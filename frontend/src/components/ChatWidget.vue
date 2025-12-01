@@ -75,7 +75,6 @@ const newMessage = ref('')
 const chatBodyRef = ref(null)
 const inputRef = ref(null)
 const lastReadCount = ref(0)
-// Состояние для определения мобилки через JS (для v-if)
 const isMobile = ref(window.innerWidth <= 600)
 
 const messages = computed(() => store.activeList?.messages || [])
@@ -87,7 +86,6 @@ const unreadCount = computed(() => {
 const isMe = (sender) => sender === userStore.user.username
 const isImage = (avatar) => avatar && (avatar.startsWith('http') || avatar.startsWith('data:image'))
 
-// Следим за ресайзом окна
 const updateIsMobile = () => {
   isMobile.value = window.innerWidth <= 600
 }
@@ -99,15 +97,12 @@ const toggleChat = () => {
   if (isOpen.value) {
     scrollToBottom()
     lastReadCount.value = messages.value.length
-    // Фокус на поле ввода (удобно на десктопе, на мобилке может вызвать клавиатуру сразу)
     if (!isMobile.value) {
       setTimeout(() => inputRef.value?.focus(), 100)
     }
   }
 }
 
-// На десктопе клик по хедеру открывает/закрывает.
-// На мобилке хедер только для закрытия через крестик или заголовок.
 const handleHeaderClick = () => {
   if (!isMobile.value) {
     toggleChat()
@@ -119,7 +114,6 @@ const send = async () => {
   await store.sendMessage(newMessage.value)
   newMessage.value = ''
   scrollToBottom()
-  // На мобилке оставляем фокус, чтобы писать дальше
   if (isMobile.value) {
     inputRef.value?.focus()
   }
@@ -146,22 +140,22 @@ const formatTime = (ts) => {
 </script>
 
 <style scoped>
-/* --- DESKTOP STYLES (Default) --- */
+/* --- DESKTOP STYLES --- */
 .chat-widget {
   position: fixed;
-  bottom: 0;
+  bottom: 80px; /* ИЗМЕНИЛ: добавил отступ от footer */
   right: 20px;
   width: 320px;
   background: var(--card-color);
   border-radius: 16px 16px 0 0;
   box-shadow: 0 -5px 30px rgba(0,0,0,0.4);
-  z-index: 200;
+  z-index: 150; /* ИЗМЕНИЛ: поднял выше footer (который 100) */
   display: flex;
   flex-direction: column;
   border: 1px solid var(--border-color);
   border-bottom: none;
   transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-  transform: translateY(calc(100% - 50px)); /* Свернут */
+  transform: translateY(calc(100% - 50px));
 }
 
 .chat-widget.open {
@@ -303,18 +297,17 @@ const formatTime = (ts) => {
 
 /* --- MOBILE STYLES --- */
 @media (max-width: 600px) {
-  /* 1. Кнопка FAB для открытия */
   .mobile-chat-btn {
     position: fixed;
-    bottom: 2rem;
-    right: 2rem;
+    bottom: 100px; /* ИЗМЕНИЛ: выше footer */
+    right: 1.5rem;
     width: 56px;
     height: 56px;
     border-radius: 50%;
     background: linear-gradient(135deg, var(--primary-color), #f43f5e);
     border: none;
     box-shadow: 0 4px 15px rgba(255, 51, 102, 0.4);
-    z-index: 195; /* Чуть ниже самого чата */
+    z-index: 110; /* ИЗМЕНИЛ: выше footer (100) */
     display: flex;
     justify-content: center;
     align-items: center;
@@ -340,19 +333,18 @@ const formatTime = (ts) => {
     border: 2px solid var(--primary-color);
   }
 
-  /* 2. Контейнер чата на мобильном */
   .chat-widget.mobile-fullscreen {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
-    height: 100%; /* На весь экран */
+    height: 100%;
     bottom: auto;
     right: auto;
     border-radius: 0;
-    transform: translateY(100%); /* По умолчанию скрыт вниз */
+    transform: translateY(100%);
     transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-    z-index: 2000; /* Самый верхний слой */
+    z-index: 2000;
   }
 
   .chat-widget.mobile-fullscreen.open {
@@ -361,25 +353,23 @@ const formatTime = (ts) => {
 
   .chat-header {
     padding: 1rem;
-    height: 60px; /* Чуть выше для пальца */
+    height: 60px;
   }
 
   .btn-toggle {
-    font-size: 1.5rem; /* Крестик покрупнее */
+    font-size: 1.5rem;
     padding: 10px;
   }
 
-  /* 3. Увеличение шрифта для iOS (от 16px зум не срабатывает) */
   .chat-input {
     font-size: 16px;
     padding: 12px;
   }
 
   .msg-bubble {
-    font-size: 16px; /* Текст сообщений тоже читабельнее */
+    font-size: 16px;
   }
 
-  /* Поднимаем футер, если клавиатура открывается (частично решает браузер, но margin не помешает) */
   .chat-footer {
     padding-bottom: max(0.8rem, env(safe-area-inset-bottom));
   }

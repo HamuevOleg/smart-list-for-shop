@@ -82,8 +82,10 @@ const diffClass = computed(() => {
   color: #ef4444; /* Красный (невыгодно) */
 }
 
-/* Добавим отступ для контента, чтобы футер не перекрывал список */
-:global(body) {
-  padding-bottom: 80px;
+/* СКРЫВАЕМ FOOTER НА МОБИЛЬНЫХ И ПЛАНШЕТАХ */
+@media (max-width: 900px) {
+  .total-footer {
+    display: none;
+  }
 }
 </style>

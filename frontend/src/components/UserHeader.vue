@@ -24,7 +24,15 @@
 
       <h2 class="list-title">{{ store.activeList?.name }}</h2>
 
-      <button class="btn btn-primary" @click="store.isShareModalOpen = true">
+      <!-- Мобильный индикатор суммы -->
+      <button
+        class="mobile-total-indicator"
+        @click="store.toggleTotalsSidebar"
+      >
+        💰 {{ cheapestTotal }}
+      </button>
+
+      <button class="btn btn-primary desktop-share-btn" @click="store.isShareModalOpen = true">
         Share 🔗
       </button>
     </div>
@@ -72,7 +80,6 @@ import { useUserStore } from '@/stores/userStore'
 const store = useListStore()
 const userStore = useUserStore()
 
-// Универсальная проверка на картинку
 const isImage = (avatar) => {
   return avatar && (avatar.startsWith('http') || avatar.startsWith('data:image'))
 }
@@ -83,18 +90,15 @@ const handleLogout = () => {
   }
 }
 
-// Фильтруем список: убираем себя из списка участников
 const otherParticipants = computed(() => {
   const all = store.activeList?.participants || []
   return all.filter(p => p.username !== userStore.user.username)
 })
 
-// Определение статуса (Онлайн если был < 20 сек назад)
-// Так как опрос идет каждые 3 сек, 20 сек - это с запасом
 const getStatusClass = (lastSeenStr) => {
   const diff = Date.now() - Number(lastSeenStr)
-  if (diff < 20000) return 'online' // < 20 сек
-  if (diff < 60000) return 'away'   // < 1 мин
+  if (diff < 20000) return 'online'
+  if (diff < 60000) return 'away'
   return 'offline'
 }
 
@@ -105,6 +109,17 @@ const getStatusText = (lastSeenStr) => {
   if (mins < 1) return 'Just seen'
   return `${mins}m ago`
 }
+
+// Вычисление самой дешевой суммы
+const cheapestTotal = computed(() => {
+  const total1 = parseFloat(store.totals.store1)
+  const total2 = parseFloat(store.totals.store2)
+
+  if (total1 > 0 && total2 > 0) {
+    return Math.min(total1, total2).toFixed(2)
+  }
+  return (total1 || total2).toFixed(2)
+})
 </script>
 
 <style scoped>
@@ -120,6 +135,8 @@ const getStatusText = (lastSeenStr) => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 .user-info {
   display: flex;
@@ -144,7 +161,6 @@ const getStatusText = (lastSeenStr) => {
 }
 .btn-logout:hover { opacity: 1; color: var(--primary-color); }
 
-/* Стили главной аватарки */
 .avatar-img, .avatar-emoji {
   width: 45px; height: 45px;
   border-radius: 50%;
@@ -155,7 +171,37 @@ const getStatusText = (lastSeenStr) => {
 }
 
 .username { font-weight: 700; font-size: 1.1rem; color: #fff; }
-.list-title { font-size: 1.25rem; color: var(--secondary-color); margin: 0; text-align: center; }
+.list-title {
+  font-size: 1.25rem;
+  color: var(--secondary-color);
+  margin: 0;
+  text-align: center;
+}
+
+/* Мобильный индикатор суммы - скрыт по умолчанию */
+.mobile-total-indicator {
+  display: none;
+  background: rgba(255, 51, 102, 0.15);
+  border: 1px solid var(--primary-color);
+  border-radius: 12px;
+  padding: 0.5rem 1rem;
+  color: var(--primary-color);
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.3s ease;
+}
+
+.mobile-total-indicator:hover {
+  background: rgba(255, 51, 102, 0.25);
+  transform: scale(1.05);
+}
+
+/* Кнопка Share - показываем только на десктопе */
+.desktop-share-btn {
+  display: inline-block;
+}
 
 /* --- СТИЛИ ДЛЯ ПАНЕЛИ УЧАСТНИКОВ --- */
 .participants-bar {
@@ -176,19 +222,18 @@ const getStatusText = (lastSeenStr) => {
 }
 .participants-list {
   display: flex;
-  gap: 0.5rem; /* Отступ между участниками */
+  gap: 0.5rem;
   flex-wrap: wrap;
 }
 .participant {
   position: relative;
   transition: transform 0.2s;
-  cursor: help; /* Курсор подсказывает, что есть title */
+  cursor: help;
 }
 .participant:hover {
   transform: translateY(-2px);
 }
 
-/* Маленькие аватарки участников */
 .p-avatar-wrapper {
   position: relative;
   width: 32px; height: 32px;
@@ -196,26 +241,42 @@ const getStatusText = (lastSeenStr) => {
 .p-avatar-img, .p-avatar-emoji {
   width: 100%; height: 100%;
   border-radius: 50%;
-  border: 2px solid var(--card-color); /* Обводка под цвет фона */
+  border: 2px solid var(--card-color);
   background: var(--bg-input);
   display: flex; align-items: center; justify-content: center;
   font-size: 1.2rem; object-fit: cover;
 }
 
-/* Точка статуса */
 .status-dot {
   position: absolute;
   bottom: -2px; right: -2px;
   width: 10px; height: 10px;
   border-radius: 50%;
   border: 2px solid var(--card-color);
-  background-color: #94a3b8; /* По умолчанию серый */
+  background-color: #94a3b8;
 }
 .status-dot.online { background-color: #10b981; box-shadow: 0 0 5px #10b981; }
 .status-dot.away { background-color: #f59e0b; }
 
+/* МОБИЛЬНАЯ АДАПТАЦИЯ */
 @media (max-width: 600px) {
-  .list-title { display: none; }
+  .list-title {
+    display: none; /* Скрываем название списка */
+  }
+
+  /* Показываем мобильный индикатор суммы */
+  .mobile-total-indicator {
+    display: block;
+  }
+
+  /* Скрываем кнопку Share на мобильных */
+  .desktop-share-btn {
+    display: none;
+  }
+
+  .header-top {
+    justify-content: space-between;
+  }
 }
 
 .header-nav {
