@@ -24,17 +24,24 @@
 
       <h2 class="list-title">{{ store.activeList?.name }}</h2>
 
-      <!-- Мобильный индикатор суммы -->
       <button
         class="mobile-total-indicator"
-        @click="store.toggleTotalsSidebar"
+        @click="store.toggleTotalsModal"
       >
         💰 {{ cheapestTotal }}
       </button>
 
-      <button class="btn btn-primary desktop-share-btn" @click="store.isShareModalOpen = true">
-        Share 🔗
-      </button>
+      <div class="header-actions">
+        <button class="btn btn-secondary action-btn" @click="store.toggleChat">
+          <span class="desktop-text">Chat 💬</span>
+          <span class="mobile-icon">💬</span>
+        </button>
+
+        <button class="btn btn-primary action-btn" @click="store.isShareModalOpen = true">
+          <span class="desktop-text">Share 🔗</span>
+          <span class="mobile-icon">🔗</span>
+        </button>
+      </div>
     </div>
 
     <div class="participants-bar" v-if="otherParticipants.length > 0">
@@ -110,7 +117,6 @@ const getStatusText = (lastSeenStr) => {
   return `${mins}m ago`
 }
 
-// Вычисление самой дешевой суммы
 const cheapestTotal = computed(() => {
   const total1 = parseFloat(store.totals.store1)
   const total2 = parseFloat(store.totals.store2)
@@ -178,7 +184,6 @@ const cheapestTotal = computed(() => {
   text-align: center;
 }
 
-/* Мобильный индикатор суммы - скрыт по умолчанию */
 .mobile-total-indicator {
   display: none;
   background: rgba(255, 51, 102, 0.15);
@@ -198,12 +203,23 @@ const cheapestTotal = computed(() => {
   transform: scale(1.05);
 }
 
-/* Кнопка Share - показываем только на десктопе */
-.desktop-share-btn {
-  display: inline-block;
+.header-actions {
+  display: flex;
+  gap: 0.5rem;
 }
 
-/* --- СТИЛИ ДЛЯ ПАНЕЛИ УЧАСТНИКОВ --- */
+.action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  transition: all 0.2s ease;
+}
+
+/* По умолчанию (десктоп): показываем текст, скрываем мобильную иконку */
+.desktop-text { display: inline; }
+.mobile-icon { display: none; }
+
 .participants-bar {
   display: flex;
   align-items: center;
@@ -258,24 +274,22 @@ const cheapestTotal = computed(() => {
 .status-dot.online { background-color: #10b981; box-shadow: 0 0 5px #10b981; }
 .status-dot.away { background-color: #f59e0b; }
 
-/* МОБИЛЬНАЯ АДАПТАЦИЯ */
+/* === МОБИЛЬНАЯ АДАПТАЦИЯ === */
 @media (max-width: 600px) {
-  .list-title {
-    display: none; /* Скрываем название списка */
-  }
+  .list-title { display: none; }
+  .mobile-total-indicator { display: block; }
 
-  /* Показываем мобильный индикатор суммы */
-  .mobile-total-indicator {
-    display: block;
-  }
+  .header-top { justify-content: space-between; }
 
-  /* Скрываем кнопку Share на мобильных */
-  .desktop-share-btn {
-    display: none;
-  }
+  /* Переключаем режим кнопок на "только иконки" */
+  .desktop-text { display: none; }
+  .mobile-icon { display: inline; }
 
-  .header-top {
-    justify-content: space-between;
+  .action-btn {
+    padding: 0.5rem; /* Квадратные кнопки */
+    min-width: 40px;
+    height: 40px;
+    font-size: 1.2rem;
   }
 }
 

@@ -15,7 +15,11 @@ export const useListStore = defineStore('list', () => {
   const editingItem = ref(null)
   const viewingItem = ref(null)
   const isAddItemFormVisible = ref(false)
-  const isTotalsSidebarOpen = ref(false)
+
+  // New UI States
+  const isTotalsSidebarOpen = ref(false) // Keeping legacy sidebar just in case
+  const isTotalsModalOpen = ref(false)   // New global state for the Price Modal
+  const isChatOpen = ref(false)          // New global state for Chat Sidebar
 
   // --- GETTERS ---
   const activeList = computed(() => {
@@ -84,7 +88,6 @@ export const useListStore = defineStore('list', () => {
     }
   }
 
-  // Обновленный fetchListById (теперь запрашивает и сообщения)
   const fetchListById = async (id, { background = false } = {}) => {
     if (!background) isLoading.value = true
 
@@ -102,7 +105,6 @@ export const useListStore = defineStore('list', () => {
           participants {
             username avatar lastSeen
           }
-          # Запрашиваем сообщения чата
           messages {
             id sender avatar text timestamp
           }
@@ -287,7 +289,6 @@ export const useListStore = defineStore('list', () => {
     }
   }
 
-  // --- НОВАЯ ФУНКЦИЯ ОТПРАВКИ СООБЩЕНИЯ ---
   const sendMessage = async (text) => {
     if (!activeList.value) return
     const userStore = useUserStore()
@@ -304,7 +305,6 @@ export const useListStore = defineStore('list', () => {
       const user = { username: userStore.user.username, avatar: userStore.user.avatar }
       const data = await gplClient(query, { listId: activeList.value.id, text, user })
 
-      // Оптимистичное добавление (сразу видим сообщение)
       if (!activeList.value.messages) activeList.value.messages = []
       activeList.value.messages.push(data.sendMessage)
 
@@ -321,16 +321,25 @@ export const useListStore = defineStore('list', () => {
   const cancelEdit = () => { editingItem.value = null }
   const showAddItemForm = () => { isAddItemFormVisible.value = true }
   const hideAddItemForm = () => { isAddItemFormVisible.value = false }
+
+  // Toggles
   const toggleTotalsSidebar = () => { isTotalsSidebarOpen.value = !isTotalsSidebarOpen.value }
   const closeTotalsSidebar = () => { isTotalsSidebarOpen.value = false }
 
+  const toggleTotalsModal = () => { isTotalsModalOpen.value = !isTotalsModalOpen.value }
+
+  const toggleChat = () => { isChatOpen.value = !isChatOpen.value }
+  const closeChat = () => { isChatOpen.value = false }
+
   return {
     lists, activeListId, isLoading, isShareModalOpen, editingItem, viewingItem,
-    isAddItemFormVisible, isTotalsSidebarOpen, isAddingItem,
+    isAddItemFormVisible, isTotalsSidebarOpen, isTotalsModalOpen, isChatOpen, isAddingItem,
     activeList, groupedItems, totals,
     fetchLists, fetchListById, selectList, backToListSelector, createList, addItem,
     removeItem, toggleItem, startEditing, saveEdit, cancelEdit, startViewing, cancelViewing,
-    showAddItemForm, hideAddItemForm, toggleTotalsSidebar, closeTotalsSidebar,
-    sendMessage // Экспортируем новую функцию
+    showAddItemForm, hideAddItemForm,
+    toggleTotalsSidebar, closeTotalsSidebar, toggleTotalsModal,
+    toggleChat, closeChat,
+    sendMessage
   }
 })

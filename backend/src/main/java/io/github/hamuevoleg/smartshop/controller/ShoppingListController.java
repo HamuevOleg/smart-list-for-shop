@@ -38,27 +38,22 @@ public class ShoppingListController {
         ShoppingList list = repository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("List not found"));
 
-        // Если передан пользователь, обновляем его "пульс" (lastSeen)
         if (user != null && user.getUsername() != null) {
             long now = System.currentTimeMillis();
 
-            // 1. Удаляем старую запись об этом пользователе (если была)
             if (list.getParticipants() != null) {
                 list.getParticipants().removeIf(p -> p.getUsername().equals(user.getUsername()));
             }
 
-            // 2. Добавляем свежую запись
             list.getParticipants().add(new ListParticipant(
                     user.getUsername(),
                     user.getAvatar(),
                     String.valueOf(now)
             ));
 
-            // 3. Очищаем "призраков" (тех, кого не было больше 1 часа), чтобы БД не пухла
             long oneHourAgo = now - (60 * 60 * 1000);
             list.getParticipants().removeIf(p -> Long.parseLong(p.getLastSeen()) < oneHourAgo);
 
-            // Сохраняем обновление списка участников
             repository.save(list);
         }
 
@@ -89,14 +84,12 @@ public class ShoppingListController {
         newItem.setQuantity(itemInput.getQuantity());
         newItem.setUnit(itemInput.getUnit());
 
-        // 1. AI Категория
         String category = itemInput.getCategory();
         if (category == null || category.trim().isEmpty()) {
             category = geminiService.suggestCategory(itemInput.getName());
         }
         newItem.setCategory(category);
 
-        // 2. AI Цены
         if (itemInput.getPriceStore1() == null && itemInput.getPriceStore2() == null) {
             String aiResponse = geminiService.suggestPrices(itemInput.getName());
             if (!aiResponse.isEmpty()) {
@@ -112,7 +105,6 @@ public class ShoppingListController {
         newItem.setUserPrice(itemInput.getUserPrice());
         newItem.setCompleted(false);
 
-        // 3. Сохраняем автора
         if (user != null) {
             newItem.setAddedBy(user.getUsername());
             newItem.setAddedByAvatar(user.getAvatar());
@@ -162,11 +154,9 @@ public class ShoppingListController {
         item.setCompleted(completed);
 
         if (completed && user != null) {
-            // Если выполнили - записываем кто
             item.setCompletedBy(user.getUsername());
             item.setCompletedByAvatar(user.getAvatar());
         } else {
-            // Если отменили - очищаем поля
             item.setCompletedBy(null);
             item.setCompletedByAvatar(null);
         }

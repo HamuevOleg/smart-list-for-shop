@@ -1,6 +1,5 @@
 # --- TYPES ---
 
-# Тип участника списка (НОВЫЙ)
 type ListParticipant {
     username: String
     avatar: String
@@ -73,7 +72,6 @@ input UpdateItemInput {
 type Query {
     allLists: [ShoppingList]!
 
-    # Здесь мы принимаем user, чтобы обновлять "lastSeen"
     listById(id: ID!, user: UserInput): ShoppingList
 
     searchImages(query: String!): [String]!
