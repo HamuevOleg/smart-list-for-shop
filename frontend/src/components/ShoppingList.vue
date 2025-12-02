@@ -36,9 +36,7 @@ const store = useListStore()
 let pollingInterval = null
 
 onMounted(() => {
-  // Автообновление каждые 3 секунды
   pollingInterval = setInterval(() => {
-    // Не обновляем, если добавляем товар или редактируем, чтобы не сбить фокус
     if (store.activeListId && !store.editingItem && !store.isAddingItem) {
       store.fetchListById(store.activeListId, { background: true })
     }
@@ -46,7 +44,6 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  // Очистка таймера
   if (pollingInterval) clearInterval(pollingInterval)
 })
 </script>

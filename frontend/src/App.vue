@@ -3,25 +3,38 @@
 
   <div id="app-container" :class="{ 'sidebar-open': isTotalsSidebarOpen }">
 
+    <Transition name="slide-down">
+      <div v-if="!isOnline" class="offline-banner">
+        <div class="spinner"></div>
+        <span>No Internet Connection - Offline Mode</span>
+      </div>
+    </Transition>
+
     <div id="app-wrapper">
 
       <UserHeader v-if="route.name === 'list'" />
 
-      <main>
-        <div class="add-item-toggle" v-if="route.name === 'list' && !store.isAddItemFormVisible">
-          <button class="btn btn-primary" @click="store.showAddItemForm">
-            + Add item
-          </button>
-        </div>
+      <div class="content-grid">
+        <main class="main-column">
+          <div class="add-item-toggle" v-if="route.name === 'list' && !store.isAddItemFormVisible">
+            <button class="btn btn-primary" @click="store.showAddItemForm">
+              + Add item
+            </button>
+          </div>
 
-        <AddItemForm v-if="route.name === 'list'" />
+          <AddItemForm v-if="route.name === 'list'" />
 
-        <router-view v-slot="{ Component }">
-          <Transition name="fade" mode="out-in">
-            <component :is="Component" />
-          </Transition>
-        </router-view>
-      </main>
+          <router-view v-slot="{ Component }">
+            <Transition name="fade" mode="out-in">
+              <component :is="Component" />
+            </Transition>
+          </router-view>
+        </main>
+
+        <aside class="sidebar-column" v-if="route.name === 'list'">
+          <HowItWorksSidebar />
+        </aside>
+      </div>
 
       <ShareModal />
       <EditModal />
@@ -78,7 +91,7 @@
                 <span>✨ Best Deal: {{ bestStore }}</span>
               </div>
 
-              <p class="modal-note">* Unpurchased items only</p>
+              <p class="modal-note">* Only unpurchased items are counted</p>
             </div>
           </div>
         </div>
@@ -89,7 +102,7 @@
 </template>
 
 <script setup>
-import { computed, watch, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useListStore } from '@/stores/listStore'
 import { useGalaxyBackground } from '@/composables/useGalaxyBackground'
@@ -102,12 +115,32 @@ import EditModal from './components/EditModal.vue'
 import ItemDetailModal from './components/ItemDetailModal.vue'
 import WelcomeModal from './components/WelcomeModal.vue'
 import ChatWidget from './components/ChatWidget.vue'
+import HowItWorksSidebar from './components/HowItWorksSidebar.vue'
 
 const store = useListStore()
 const { activeListId, isTotalsSidebarOpen, totals, isTotalsModalOpen } = storeToRefs(store)
 
 const route = useRoute()
 const router = useRouter()
+const isOnline = ref(navigator.onLine)
+
+const updateOnlineStatus = () => {
+  isOnline.value = navigator.onLine
+
+  if (isOnline.value) {
+    store.syncPendingActions()
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('online', updateOnlineStatus)
+  window.addEventListener('offline', updateOnlineStatus)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('online', updateOnlineStatus)
+  window.removeEventListener('offline', updateOnlineStatus)
+})
 
 watch(activeListId, (newId) => {
   if (newId) {
@@ -117,7 +150,6 @@ watch(activeListId, (newId) => {
   }
 })
 
-// Блокируем скролл фона при открытии модалки (убирает дергания)
 watch(isTotalsModalOpen, (isOpen) => {
   if (isOpen) {
     document.body.style.overflow = 'hidden'
@@ -135,8 +167,8 @@ store.backToListSelector = () => {
 }
 
 const cheapestTotal = computed(() => {
-  const total1 = parseFloat(totals.value.store1)
-  const total2 = parseFloat(totals.value.store2)
+  const total1 = parseFloat(totals.value.store1) || 0
+  const total2 = parseFloat(totals.value.store2) || 0
 
   if (total1 > 0 && total2 > 0) {
     return Math.min(total1, total2).toFixed(2)
@@ -196,10 +228,11 @@ const { canvasRef } = useGalaxyBackground({
 
 #app-container {
   display: flex; justify-content: center;
+  padding-top: 40px;
 }
 
 #app-wrapper {
-  max-width: 800px; width: 100%; margin: 0 auto; padding: 2rem 1rem;
+  max-width: 1280px; width: 100%; margin: 0 auto; padding: 2rem 1rem;
   position: relative; z-index: 1; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
@@ -218,10 +251,63 @@ const { canvasRef } = useGalaxyBackground({
 </style>
 
 <style scoped>
-/* Глобальный сброс для этого компонента, чтобы padding не ломал ширину */
 * {
   box-sizing: border-box;
 }
+
+.content-grid {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 2rem;
+  align-items: start;
+}
+
+.main-column {
+  min-width: 0;
+}
+
+@media (max-width: 1024px) {
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
+  .sidebar-column {
+    margin-top: 2rem;
+  }
+}
+
+.offline-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background-color: #ef4444;
+  color: #fff;
+  font-weight: 700;
+  text-align: center;
+  padding: 0.8rem;
+  z-index: 9999;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+}
+
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 3px solid rgba(255,255,255,0.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.slide-down-enter-active, .slide-down-leave-active { transition: transform 0.3s ease; }
+.slide-down-enter-from, .slide-down-leave-to { transform: translateY(-100%); }
 
 .add-item-toggle {
   display: flex; justify-content: center; margin-bottom: 2rem;
@@ -254,15 +340,14 @@ const { canvasRef } = useGalaxyBackground({
   .btn-fab-totals { display: none; }
 }
 
-/* ===== UPDATED MODAL STYLES ===== */
 .totals-modal-backdrop {
   position: fixed;
-  inset: 0; /* Растягиваем на весь экран */
+  inset: 0;
   background: rgba(0, 0, 0, 0.85);
   backdrop-filter: blur(8px);
   display: flex;
-  justify-content: center; /* Центрируем горизонтально */
-  align-items: center;     /* Центрируем вертикально */
+  justify-content: center;
+  align-items: center;
   z-index: 9999;
   padding: 1rem;
 }
@@ -275,9 +360,9 @@ const { canvasRef } = useGalaxyBackground({
   box-shadow: 0 25px 80px rgba(255, 51, 102, 0.4);
   position: relative;
   display: flex; flex-direction: column;
-  box-sizing: border-box; /* ВАЖНО: Исправляет проблему с -32px */
-  max-height: 85vh; /* Ограничиваем высоту */
-  overflow-y: auto; /* Скролл внутри, если контента много */
+  box-sizing: border-box;
+  max-height: 85vh;
+  overflow-y: auto;
 }
 
 .modal-close-btn {
@@ -339,16 +424,13 @@ const { canvasRef } = useGalaxyBackground({
 .modal-fade-enter-active, .modal-fade-leave-active { transition: all 0.25s ease; }
 .modal-fade-enter-from, .modal-fade-leave-to { opacity: 0; transform: scale(0.95); }
 
-/* Mobile Optimization */
 @media (max-width: 600px) {
   .totals-modal-backdrop {
-    /* ОТКЛЮЧАЕМ BLUR НА МОБИЛЬНЫХ ДЛЯ ПРОИЗВОДИТЕЛЬНОСТИ */
     backdrop-filter: none;
-    background: rgba(0, 0, 0, 0.9); /* Делаем фон чуть темнее вместо размытия */
+    background: rgba(0, 0, 0, 0.9);
   }
 
   .totals-modal-content {
-    /* Гарантируем, что ширина не выйдет за рамки */
     width: 95%;
     max-width: 95%;
   }

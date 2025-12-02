@@ -356,16 +356,15 @@ const formatTime = (ts) => {
     width: 100%;
     max-width: 100%;
     height: 100%;
-    top: 0; left: 0; right: 0; bottom: 0; /* Фиксируем на весь экран */
+    top: 0; left: 0; right: 0; bottom: 0;
     border-left: none;
-    border-radius: 0; /* Убираем скругления */
+    border-radius: 0;
   }
 
   .chat-input { font-size: 16px; } /* iOS zoom fix */
 
   .btn-close { font-size: 2rem; padding: 0 10px; }
 
-  /* Скрываем эмодзи-пикер на мобильных (используем нативную клавиатуру) */
   .emoji-toggle { display: none; }
 }
 </style>

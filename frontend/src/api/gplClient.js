@@ -1,12 +1,6 @@
-// Адрес твоего Spring Boot сервера
-// ВАЖНО: Заменили localhost на твой локальный IP
-const API_URL = 'http://192.168.59.164:8080/graphql'
 
-/**
- * Простой GraphQL-клиент
- * @param {string} query - GraphQL-запрос (напр. "query { ... }")
- * @param {object} variables - Переменные для запроса (напр. { "listId": "123" })
- */
+const API_URL = 'http://192.168.58.61:8080/graphql'
+
 export async function gplClient(query, variables = {}) {
   try {
     const response = await fetch(API_URL, {
