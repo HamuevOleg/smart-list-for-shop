@@ -14,8 +14,16 @@
 
       <UserHeader v-if="route.name === 'list'" />
 
-      <div class="content-grid">
+      <div class="content-grid" :class="{ 'closed-sidebar': !store.isHelpSidebarOpen || route.name !== 'list' }">
         <main class="main-column">
+
+          <div class="top-controls" v-if="!store.isHelpSidebarOpen && route.name === 'list'">
+            <button class="btn-show-help" @click="store.toggleHelpSidebar">
+              <span class="help-icon">💡</span>
+              <span>How it works?</span>
+            </button>
+          </div>
+
           <div class="add-item-toggle" v-if="route.name === 'list' && !store.isAddItemFormVisible">
             <button class="btn btn-primary" @click="store.showAddItemForm">
               + Add item
@@ -32,7 +40,9 @@
         </main>
 
         <aside class="sidebar-column" v-if="route.name === 'list'">
-          <HowItWorksSidebar />
+          <Transition name="slide-fade">
+            <HowItWorksSidebar v-show="store.isHelpSidebarOpen" />
+          </Transition>
         </aside>
       </div>
 
@@ -126,7 +136,6 @@ const isOnline = ref(navigator.onLine)
 
 const updateOnlineStatus = () => {
   isOnline.value = navigator.onLine
-
   if (isOnline.value) {
     store.syncPendingActions()
   }
@@ -140,7 +149,10 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('online', updateOnlineStatus)
   window.removeEventListener('offline', updateOnlineStatus)
+  document.body.style.overflow = ''
 })
+
+// --- WATCHERS ---
 
 watch(activeListId, (newId) => {
   if (newId) {
@@ -151,16 +163,15 @@ watch(activeListId, (newId) => {
 })
 
 watch(isTotalsModalOpen, (isOpen) => {
-  if (isOpen) {
-    document.body.style.overflow = 'hidden'
-  } else {
-    document.body.style.overflow = ''
-  }
+  document.body.style.overflow = isOpen ? 'hidden' : ''
 })
 
-onUnmounted(() => {
-  document.body.style.overflow = ''
-})
+// Automatically close help sidebar when leaving list view
+watch(() => route.name, (newRouteName) => {
+  if (newRouteName !== 'list') {
+    store.isHelpSidebarOpen = false
+  }
+}, { immediate: true })
 
 store.backToListSelector = () => {
   store.activeListId = null
@@ -169,7 +180,6 @@ store.backToListSelector = () => {
 const cheapestTotal = computed(() => {
   const total1 = parseFloat(totals.value.store1) || 0
   const total2 = parseFloat(totals.value.store2) || 0
-
   if (total1 > 0 && total2 > 0) {
     return Math.min(total1, total2).toFixed(2)
   }
@@ -248,6 +258,21 @@ const { canvasRef } = useGalaxyBackground({
 
 .fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
+
+.slide-fade-enter-active {
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.slide-fade-leave-active {
+  transition: all 0.3s ease;
+}
+.slide-fade-enter-from {
+  opacity: 0;
+  transform: translateX(30px);
+}
+.slide-fade-leave-to {
+  opacity: 0;
+  transform: translateX(30px);
+}
 </style>
 
 <style scoped>
@@ -255,23 +280,75 @@ const { canvasRef } = useGalaxyBackground({
   box-sizing: border-box;
 }
 
+/* === MAIN GRID LAYOUT & ANIMATION === */
 .content-grid {
   display: grid;
-  grid-template-columns: 1fr 340px;
+  grid-template-columns: 1fr 360px;
   gap: 2rem;
   align-items: start;
+  transition: grid-template-columns 0.5s cubic-bezier(0.4, 0, 0.2, 1), gap 0.5s ease;
+}
+
+.content-grid.closed-sidebar {
+  grid-template-columns: 1fr 0px;
+  gap: 0;
 }
 
 .main-column {
   min-width: 0;
 }
 
+.sidebar-column {
+  overflow: hidden;
+}
+
+/* === TOP CONTROLS (Open Help Btn) === */
+.top-controls {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1rem;
+  animation: fadeIn 0.5s ease;
+}
+
+.btn-show-help {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  padding: 0.6rem 1.2rem;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.btn-show-help:hover {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 51, 102, 0.3);
+  border-color: var(--primary-color);
+}
+
+.help-icon {
+  font-size: 1.1rem;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 @media (max-width: 1024px) {
-  .content-grid {
+  .content-grid, .content-grid.closed-sidebar {
     grid-template-columns: 1fr;
   }
   .sidebar-column {
     margin-top: 2rem;
+    overflow: visible;
   }
 }
 

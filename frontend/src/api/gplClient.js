@@ -1,5 +1,5 @@
 
-const API_URL = 'http://192.168.58.61:8080/graphql'
+const API_URL = 'http://192.168.0.91:8080/graphql'
 
 export async function gplClient(query, variables = {}) {
   try {
