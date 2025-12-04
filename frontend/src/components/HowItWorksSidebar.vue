@@ -11,163 +11,195 @@
       </Transition>
     </Teleport>
 
-    <aside class="how-it-works-sidebar" :class="{ 'mobile-mode': isMobile }">
+    <Teleport to="body" :disabled="!isMobile">
+      <aside
+        class="how-it-works-sidebar"
+        :class="{ 'mobile-mode': isMobile }"
+        v-show="!isMobile || store.isHelpSidebarOpen"
+      >
 
-      <div class="sidebar-header">
-        <div class="title-group">
-          <div class="icon-badge">
-            <span class="badge-icon">🚀</span>
-            <div class="pulse-ring"></div>
-          </div>
-          <div>
-            <h3>How SmartList Works</h3>
-            <p class="subtitle">AI-powered shopping magic</p>
-          </div>
-        </div>
-        <button class="btn-close" @click.stop="closeSidebar" title="Close">
-          <span class="close-icon">×</span>
-        </button>
-      </div>
-
-      <div class="scrollable-content">
-        <div class="workflow-container">
-
-          <div class="step user-action" :class="{ 'active': activeStep >= 1 }">
-            <div class="step-header-row">
-              <div class="step-number">1</div>
-              <h4 class="step-title">Add Your Item</h4>
+        <div class="sidebar-header">
+          <div class="title-group">
+            <div class="icon-badge">
+              <span class="badge-icon">🚀</span>
+              <div class="pulse-ring"></div>
             </div>
-            <div class="step-body">
-              <div class="step-icon-wrapper">
-                <div class="step-icon">✍️</div>
-              </div>
-              <div class="step-content">
-                <p class="step-description">Type what you need to buy</p>
-                <div class="mock-input">
-                  <span class="input-prefix">📝</span>
-                  <span class="typed-text">{{ currentTypedText }}</span>
-                  <span class="cursor">|</span>
-                </div>
-              </div>
+            <div>
+              <h3>{{ isMobile ? `Step ${mobileStep + 1}/4` : 'How SmartList Works' }}</h3>
+              <p class="subtitle">{{ isMobile ? getMobileTitle(mobileStep) : 'AI-powered shopping magic' }}</p>
             </div>
           </div>
 
-          <div class="connector">
-            <div class="connector-line"></div>
-            <div class="data-flow">
-              <div class="data-particle" v-for="i in 3" :key="i" :style="{ animationDelay: `${i * 0.4}s` }"></div>
-            </div>
-          </div>
-
-          <div class="step ai-processing" :class="{ 'active': activeStep >= 2 }">
-            <div class="step-header-row">
-              <div class="step-number ai">2</div>
-              <h4 class="step-title">AI Analysis</h4>
-            </div>
-            <div class="step-body">
-              <div class="step-icon-wrapper ai-wrapper">
-                <div class="ai-glow-effect"></div>
-                <div class="step-icon ai-brain">🧠</div>
-                <div class="brain-waves">
-                  <div class="wave" v-for="i in 3" :key="i"></div>
-                </div>
-              </div>
-              <div class="step-content">
-                <p class="step-description">Gemini AI processes your request</p>
-                <div class="processing-list">
-                  <div class="process-item" :class="{ 'active': activeStep >= 2 }">
-                    <div class="process-spinner"></div>
-                    <span>Analyzing text</span>
-                  </div>
-                  <div class="process-item" :class="{ 'active': activeStep >= 2 }" style="transition-delay: 0.2s">
-                    <div class="process-spinner"></div>
-                    <span>Finding category</span>
-                  </div>
-                  <div class="process-item" :class="{ 'active': activeStep >= 2 }" style="transition-delay: 0.4s">
-                    <div class="process-spinner"></div>
-                    <span>Getting images</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="connector">
-            <div class="connector-line"></div>
-            <div class="data-flow">
-              <div class="data-particle success" v-for="i in 3" :key="i" :style="{ animationDelay: `${i * 0.4}s` }"></div>
-            </div>
-          </div>
-
-          <div class="step final-result" :class="{ 'active': activeStep >= 3 }">
-            <div class="step-header-row">
-              <div class="step-number success">3</div>
-              <h4 class="step-title">Smart Item Created!</h4>
-            </div>
-            <div class="step-body">
-              <div class="step-icon-wrapper success-wrapper">
-                <div class="step-icon success-icon">✨</div>
-                <div class="sparkles">
-                  <span class="sparkle" v-for="i in 6" :key="i">✨</span>
-                </div>
-              </div>
-              <div class="step-content">
-                <p class="step-description">Ready to shop with full details</p>
-                <div class="result-card">
-                  <div class="card-left">
-                    <div class="card-emoji">🥑</div>
-                    <div class="card-info">
-                      <div class="card-name">Avocados</div>
-                      <div class="card-badges">
-                        <span class="category-badge">🍎 Fruits & Veg</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="card-right">
-                    <div class="card-price">42 MDL</div>
-                    <div class="card-check">✓</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="features-section">
-          <div class="section-header">
-            <span class="section-icon">✨</span>
-            <h4 class="section-title">Smart Features</h4>
-          </div>
-          <div class="feature-grid">
-            <div class="feature-card">
-              <div class="feature-icon">🤖</div>
-              <span class="feature-text">Auto-categorize</span>
-            </div>
-            <div class="feature-card">
-              <div class="feature-icon">💰</div>
-              <span class="feature-text">Price tracking</span>
-            </div>
-            <div class="feature-card">
-              <div class="feature-icon">🖼️</div>
-              <span class="feature-text">Visual items</span>
-            </div>
-            <div class="feature-card">
-              <div class="feature-icon">⚡</div>
-              <span class="feature-text">Lightning fast</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="try-it-section">
-          <button class="btn-try-now" @click="handleTryNow">
-            <span class="btn-glow"></span>
-            <span class="btn-icon">🎯</span>
-            <span class="btn-text">Try Adding an Item</span>
-            <span class="btn-arrow">→</span>
+          <button
+            class="btn-close"
+            @click.stop="closeSidebar"
+            title="Close"
+          >
+            <span class="close-icon">×</span>
           </button>
         </div>
-      </div>
-    </aside>
+
+        <div class="scrollable-content">
+
+          <div v-if="!isMobile" class="desktop-view-container">
+            <div class="workflow-container">
+              <div class="step user-action" :class="{ 'active': activeStep >= 1 }">
+                <div class="step-header-row">
+                  <div class="step-number">1</div>
+                  <h4 class="step-title">Add Your Item</h4>
+                </div>
+                <div class="step-body">
+                  <div class="step-icon-wrapper"><div class="step-icon">✍️</div></div>
+                  <div class="step-content">
+                    <p class="step-description">Type what you need to buy</p>
+                    <div class="mock-input">
+                      <span class="input-prefix">📝</span>
+                      <span class="typed-text">{{ currentTypedText }}</span>
+                      <span class="cursor">|</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="connector"><div class="connector-line"></div><div class="data-flow"><div class="data-particle" v-for="i in 3" :key="i" :style="{ animationDelay: `${i * 0.4}s` }"></div></div></div>
+
+              <div class="step ai-processing" :class="{ 'active': activeStep >= 2 }">
+                <div class="step-header-row">
+                  <div class="step-number ai">2</div>
+                  <h4 class="step-title">AI Analysis</h4>
+                </div>
+                <div class="step-body">
+                  <div class="step-icon-wrapper ai-wrapper">
+                    <div class="ai-glow-effect"></div>
+                    <div class="step-icon ai-brain">🧠</div>
+                    <div class="brain-waves"><div class="wave" v-for="i in 3" :key="i"></div></div>
+                  </div>
+                  <div class="step-content">
+                    <p class="step-description">Gemini AI processes your request</p>
+                    <div class="processing-list">
+                      <div class="process-item" :class="{ 'active': activeStep >= 2 }"><div class="process-spinner"></div><span>Analyzing text</span></div>
+                      <div class="process-item" :class="{ 'active': activeStep >= 2 }" style="transition-delay: 0.2s"><div class="process-spinner"></div><span>Finding category</span></div>
+                      <div class="process-item" :class="{ 'active': activeStep >= 2 }" style="transition-delay: 0.4s"><div class="process-spinner"></div><span>Getting images</span></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="connector"><div class="connector-line"></div><div class="data-flow"><div class="data-particle success" v-for="i in 3" :key="i" :style="{ animationDelay: `${i * 0.4}s` }"></div></div></div>
+
+              <div class="step final-result" :class="{ 'active': activeStep >= 3 }">
+                <div class="step-header-row">
+                  <div class="step-number success">3</div>
+                  <h4 class="step-title">Smart Item Created!</h4>
+                </div>
+                <div class="step-body">
+                  <div class="step-icon-wrapper success-wrapper">
+                    <div class="step-icon success-icon">✨</div>
+                    <div class="sparkles"><span class="sparkle" v-for="i in 6" :key="i">✨</span></div>
+                  </div>
+                  <div class="step-content">
+                    <p class="step-description">Ready to shop with full details</p>
+                    <div class="result-card">
+                      <div class="card-left">
+                        <div class="card-emoji">🥑</div>
+                        <div class="card-info"><div class="card-name">Avocados</div><div class="card-badges"><span class="category-badge">🍎 Fruits & Veg</span></div></div>
+                      </div>
+                      <div class="card-right"><div class="card-price">42 MDL</div><div class="card-check">✓</div></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="features-section">
+              <div class="section-header"><span class="section-icon">✨</span><h4 class="section-title">Smart Features</h4></div>
+              <div class="feature-grid">
+                <div class="feature-card"><div class="feature-icon">🤖</div><span class="feature-text">Auto-categorize</span></div>
+                <div class="feature-card"><div class="feature-icon">💰</div><span class="feature-text">Price tracking</span></div>
+                <div class="feature-card"><div class="feature-icon">🖼️</div><span class="feature-text">Visual items</span></div>
+                <div class="feature-card"><div class="feature-icon">⚡</div><span class="feature-text">Lightning fast</span></div>
+              </div>
+            </div>
+
+            <div class="try-it-section">
+              <button class="btn-try-now" @click="handleTryNow">
+                <span class="btn-glow"></span><span class="btn-icon">🎯</span><span class="btn-text">Try Adding an Item</span><span class="btn-arrow">→</span>
+              </button>
+            </div>
+          </div>
+
+          <div v-else class="mobile-view-container">
+            <Transition name="slide-side" mode="out-in">
+
+              <div v-if="mobileStep === 0" class="mobile-slide" key="0">
+                <div class="step user-action active mobile-card">
+                  <div class="step-icon-large">✍️</div>
+                  <h4 class="mobile-step-title">1. Just Type It</h4>
+                  <p class="step-description">Simply type the item name. No need to select categories manually.</p>
+                  <div class="mock-input">
+                    <span class="input-prefix">📝</span>
+                    <span class="typed-text">Avocados</span>
+                    <span class="cursor">|</span>
+                  </div>
+                </div>
+              </div>
+
+              <div v-else-if="mobileStep === 1" class="mobile-slide" key="1">
+                <div class="step ai-processing active mobile-card">
+                  <div class="step-icon-large ai-brain">🧠</div>
+                  <h4 class="mobile-step-title">2. AI Power</h4>
+                  <p class="step-description">Gemini AI analyzes the item, finds the correct category, estimates price and searches for images.</p>
+                  <div class="processing-list">
+                    <div class="process-item active"><div class="process-spinner"></div> Finding images...</div>
+                  </div>
+                </div>
+              </div>
+
+              <div v-else-if="mobileStep === 2" class="mobile-slide" key="2">
+                <div class="step final-result active mobile-card">
+                  <div class="step-icon-large success-icon">✨</div>
+                  <h4 class="mobile-step-title">3. Ready!</h4>
+                  <p class="step-description">The item is added with a photo, price, and category automatically.</p>
+                  <div class="result-card">
+                    <div class="card-left">
+                      <div class="card-emoji">🥑</div>
+                      <div class="card-info"><div class="card-name">Avocados</div><span class="category-badge">🍎 Fruits</span></div>
+                    </div>
+                    <div class="card-right"><div class="card-price">42 MDL</div></div>
+                  </div>
+                </div>
+              </div>
+
+              <div v-else class="mobile-slide" key="3">
+                <div class="features-section mobile-card">
+                  <h4 class="mobile-step-title">Smart Features</h4>
+                  <div class="feature-grid">
+                    <div class="feature-card"><span>🤖</span> Auto-Category</div>
+                    <div class="feature-card"><span>💰</span> Price Check</div>
+                    <div class="feature-card"><span>🖼️</span> Visual Items</div>
+                    <div class="feature-card"><span>⚡</span> Live Sync</div>
+                  </div>
+                </div>
+              </div>
+
+            </Transition>
+          </div>
+
+        </div>
+
+        <div v-if="isMobile" class="mobile-footer">
+          <div class="dots">
+            <span v-for="i in 4" :key="i" class="dot" :class="{ active: mobileStep === i-1 }" @click="mobileStep = i-1"></span>
+          </div>
+          <div class="nav-btns">
+            <button v-if="mobileStep > 0" class="btn-nav secondary" @click.stop="mobileStep--">Back</button>
+            <button v-else class="btn-nav secondary" @click.stop="closeSidebar">Skip</button>
+
+            <button v-if="mobileStep < 3" class="btn-nav primary" @click.stop="mobileStep++">Next</button>
+            <button v-else class="btn-nav primary finish" @click.stop="handleTryNow">Start!</button>
+          </div>
+        </div>
+
+      </aside>
+    </Teleport>
   </div>
 </template>
 
@@ -178,12 +210,12 @@ import { useListStore } from '@/stores/listStore'
 const store = useListStore()
 
 const activeStep = ref(0)
+const mobileStep = ref(0)
 const currentTypedText = ref('')
 const fullText = 'Avocados'
 let typingInterval = null
 let stepInterval = null
 
-// Определяем мобильное устройство (<= 1024px)
 const windowWidth = ref(window.innerWidth)
 const isMobile = computed(() => windowWidth.value <= 1024)
 
@@ -191,22 +223,17 @@ const updateWidth = () => {
   windowWidth.value = window.innerWidth
 }
 
-// Блокировка прокрутки основного сайта, когда открыта модалка
-watch(() => store.isHelpSidebarOpen, (isOpen) => {
-  if (isMobile.value) {
-    document.body.style.overflow = isOpen ? 'hidden' : ''
-  } else {
-    document.body.style.overflow = ''
-  }
-})
+const getMobileTitle = (step) => {
+  const titles = ['Input', 'Processing', 'Result', 'Features']
+  return titles[step] || ''
+}
 
-// Закрытие
 const closeSidebar = () => {
-  store.isHelpSidebarOpen = false // Меняем состояние в store напрямую или через toggle
+  store.isHelpSidebarOpen = false
   document.body.style.overflow = ''
 }
 
-// --- АНИМАЦИИ ---
+// --- DESKTOP ANIMATIONS ---
 const startTypingAnimation = () => {
   let charIndex = 0
   currentTypedText.value = ''
@@ -224,6 +251,8 @@ const startTypingAnimation = () => {
 }
 
 const startStepAnimation = () => {
+  if (isMobile.value) return
+
   activeStep.value = 1
   startTypingAnimation()
 
@@ -239,18 +268,36 @@ const startStepAnimation = () => {
 
 const handleTryNow = () => {
   store.showAddItemForm()
-  if (isMobile.value) {
-    closeSidebar()
-  }
+  closeSidebar()
   setTimeout(() => {
     const form = document.querySelector('.add-item-form')
     if (form) form.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }, 100)
 }
 
+watch(() => store.isHelpSidebarOpen, (isOpen) => {
+  if (isOpen && isMobile.value) {
+    document.body.style.overflow = 'hidden'
+    mobileStep.value = 0
+  } else {
+    document.body.style.overflow = ''
+  }
+})
+
+watch(isMobile, (mobile) => {
+  if (mobile) {
+    if (stepInterval) clearInterval(stepInterval)
+    if (typingInterval) clearInterval(typingInterval)
+  } else {
+    startStepAnimation()
+  }
+})
+
 onMounted(() => {
-  startStepAnimation()
   window.addEventListener('resize', updateWidth)
+  if (!isMobile.value) {
+    startStepAnimation()
+  }
   if (isMobile.value && store.isHelpSidebarOpen) {
     document.body.style.overflow = 'hidden'
   }
@@ -265,100 +312,61 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-/* Корневая обертка для v-show родителя */
-.sidebar-root {
-  display: contents;
-}
+.sidebar-root { display: contents; }
 
-/* Фон-затемнение (Backdrop) */
 .mobile-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.85);
-  z-index: 2000;
-  backdrop-filter: blur(5px);
+  position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); z-index: 2000; backdrop-filter: blur(5px);
 }
 
 .fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
 
-/* === САЙДБАР (Базовые стили) === */
+/* === SIDEBAR BASE === */
 .how-it-works-sidebar {
   background: linear-gradient(135deg, rgba(30, 20, 50, 0.98), rgba(50, 30, 70, 0.98));
   border: 1px solid rgba(255, 255, 255, 0.15);
   backdrop-filter: blur(20px);
   border-radius: 20px;
-  padding: 0; /* Паддинг теперь внутри scrollable-content и header */
+  padding: 0;
   color: #fff;
-
   /* Desktop Sticky */
-  position: sticky;
-  top: 20px;
-  width: 100%;
-  min-width: 360px;
-  box-sizing: border-box;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-
-  display: flex;
-  flex-direction: column;
-  max-height: calc(100vh - 40px);
-  overflow: hidden;
-  z-index: 50;
+  position: sticky; top: 20px; width: 100%; min-width: 360px;
+  box-sizing: border-box; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  display: flex; flex-direction: column;
+  max-height: calc(100vh - 40px); overflow: hidden; z-index: 50;
 }
 
-/* Скроллируемая область контента */
-.scrollable-content {
-  padding: 1.5rem;
-  overflow-y: auto;
-  /* Скрываем скроллбар */
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
+.scrollable-content { padding: 1.5rem; overflow-y: auto; flex: 1; scrollbar-width: none; }
 .scrollable-content::-webkit-scrollbar { display: none; }
 
-/* Header */
 .sidebar-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  padding: 1.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(30, 20, 50, 0.9); /* Чуть фона для липкости если нужно */
-  flex-shrink: 0;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 1.5rem; border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(30, 20, 50, 0.9); flex-shrink: 0;
+  position: relative;
 }
 
 .title-group { display: flex; align-items: center; gap: 1rem; flex: 1; }
 .icon-badge {
   position: relative; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;
-  background: linear-gradient(135deg, var(--primary-color), #60a5fa);
-  border-radius: 14px; box-shadow: 0 8px 24px rgba(255, 51, 102, 0.4); flex-shrink: 0;
+  background: linear-gradient(135deg, var(--primary-color), #60a5fa); border-radius: 14px;
+  box-shadow: 0 8px 24px rgba(255, 51, 102, 0.4); flex-shrink: 0;
 }
 .badge-icon { font-size: 1.5rem; position: relative; z-index: 2; }
-.pulse-ring {
-  position: absolute; inset: -4px; border-radius: 14px;
-  border: 2px solid var(--primary-color); animation: pulse-ring 2s ease-out infinite;
-}
-.title-group h3 {
-  margin: 0 0 0.2rem 0; font-size: 1.3rem; font-weight: 700;
-  background: linear-gradient(135deg, #fff, var(--primary-color));
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent; line-height: 1.2;
-}
-.subtitle { color: rgba(255, 255, 255, 0.6); font-size: 0.8rem; margin: 0; line-height: 1.3; }
+.pulse-ring { position: absolute; inset: -4px; border-radius: 14px; border: 2px solid var(--primary-color); animation: pulse-ring 2s ease-out infinite; }
+.title-group h3 { margin: 0 0 0.2rem 0; font-size: 1.3rem; font-weight: 700; background: linear-gradient(135deg, #fff, var(--primary-color)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.subtitle { color: rgba(255, 255, 255, 0.6); font-size: 0.8rem; margin: 0; }
 
 .btn-close {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  width: 36px; height: 36px; border-radius: 10px;
-  color: #fff; font-size: 1.5rem; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  transition: all 0.3s ease; flex-shrink: 0;
-  z-index: 100;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  width: 44px; height: 44px; border-radius: 12px; color: #fff; font-size: 1.8rem; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; transition: all 0.2s ease; flex-shrink: 0;
+  z-index: 2002;
 }
-.btn-close:hover {
-  background: rgba(255, 51, 102, 0.25); border-color: var(--primary-color); transform: rotate(90deg);
-}
+.btn-close:active { transform: scale(0.9); background: rgba(255, 51, 102, 0.4); }
 
-/* Workflow Steps */
+/* === DESKTOP STYLES === */
 .workflow-container { display: flex; flex-direction: column; gap: 0; margin-bottom: 1.5rem; }
 .step {
   padding: 1.25rem; background: rgba(255, 255, 255, 0.04); border-radius: 16px;
@@ -374,7 +382,7 @@ onUnmounted(() => {
   width: 32px; height: 32px; background: rgba(255, 255, 255, 0.08);
   border: 2px solid rgba(255, 255, 255, 0.15); border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  font-weight: 800; font-size: 0.9rem; color: rgba(255, 255, 255, 0.5); transition: all 0.3s ease; flex-shrink: 0;
+  font-weight: 800; font-size: 0.9rem; color: rgba(255, 255, 255, 0.5);
 }
 .step.active .step-number { background: rgba(255, 255, 255, 0.15); border-color: rgba(255, 255, 255, 0.3); color: #fff; }
 .step-number.ai { background: linear-gradient(135deg, rgba(96, 165, 250, 0.2), rgba(255, 51, 102, 0.2)); border-color: rgba(96, 165, 250, 0.4); }
@@ -393,11 +401,7 @@ onUnmounted(() => {
 .step-content { flex: 1; display: flex; flex-direction: column; gap: 0.65rem; min-width: 0; }
 .step-description { font-size: 0.85rem; color: rgba(255, 255, 255, 0.6); margin: 0; line-height: 1.4; }
 
-/* Elements */
-.mock-input {
-  background: rgba(0, 0, 0, 0.4); padding: 0.7rem 0.9rem; border-radius: 10px; font-family: 'Courier New', monospace;
-  border: 1px solid rgba(96, 165, 250, 0.25); display: flex; align-items: center; gap: 0.6rem;
-}
+.mock-input { background: rgba(0, 0, 0, 0.4); padding: 0.7rem 0.9rem; border-radius: 10px; font-family: 'Courier New', monospace; border: 1px solid rgba(96, 165, 250, 0.25); display: flex; align-items: center; gap: 0.6rem; }
 .input-prefix { font-size: 1rem; opacity: 0.8; }
 .typed-text { color: #60a5fa; font-weight: 600; font-size: 0.95rem; }
 .cursor { animation: blink 1s step-end infinite; color: rgba(255, 255, 255, 0.5); font-weight: 700; }
@@ -411,25 +415,15 @@ onUnmounted(() => {
 .wave:nth-child(3) { animation-delay: 1.4s; }
 
 .processing-list { display: flex; flex-direction: column; gap: 0.5rem; }
-.process-item {
-  display: flex; align-items: center; gap: 0.7rem; padding: 0.55rem 0.75rem; background: rgba(0, 0, 0, 0.25);
-  border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.06); font-size: 0.85rem; color: rgba(255, 255, 255, 0.7);
-  opacity: 0; transform: translateX(-10px); transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
+.process-item { display: flex; align-items: center; gap: 0.7rem; padding: 0.55rem 0.75rem; background: rgba(0, 0, 0, 0.25); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.06); font-size: 0.85rem; color: rgba(255, 255, 255, 0.7); opacity: 0; transform: translateX(-10px); transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
 .process-item.active { opacity: 1; transform: translateX(0); border-color: rgba(96, 165, 250, 0.2); }
-.process-spinner {
-  width: 14px; height: 14px; border: 2px solid rgba(96, 165, 250, 0.3); border-top-color: #60a5fa; border-right-color: #60a5fa;
-  border-radius: 50%; animation: spin 0.8s linear infinite; flex-shrink: 0;
-}
+.process-spinner { width: 14px; height: 14px; border: 2px solid rgba(96, 165, 250, 0.3); border-top-color: #60a5fa; border-right-color: #60a5fa; border-radius: 50%; animation: spin 0.8s linear infinite; flex-shrink: 0; }
 
 .success-wrapper { width: 56px; height: 56px; }
 .success-icon { background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(16, 185, 129, 0.1)); border-color: rgba(16, 185, 129, 0.3); }
 .step.active .success-icon { background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4); animation: success-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 3.5s backwards; }
 
-.result-card {
-  display: flex; align-items: center; justify-content: space-between; background: linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(16, 185, 129, 0.06));
-  padding: 0.75rem; border-radius: 12px; border: 1px solid rgba(16, 185, 129, 0.25); box-shadow: 0 4px 16px rgba(16, 185, 129, 0.08); gap: 0.5rem;
-}
+.result-card { display: flex; align-items: center; justify-content: space-between; background: linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(16, 185, 129, 0.06)); padding: 0.75rem; border-radius: 12px; border: 1px solid rgba(16, 185, 129, 0.25); box-shadow: 0 4px 16px rgba(16, 185, 129, 0.08); gap: 0.5rem; }
 .card-left { display: flex; align-items: center; gap: 0.6rem; flex: 1; min-width: 0; }
 .card-emoji { font-size: 1.5rem; width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; background: rgba(255, 255, 255, 0.1); border-radius: 12px; flex-shrink: 0; }
 .card-info { display: flex; flex-direction: column; gap: 0.3rem; min-width: 0; }
@@ -484,31 +478,53 @@ onUnmounted(() => {
 @keyframes pulse-ring { 0% { transform: scale(0.8); opacity: 0.8; } 100% { transform: scale(1.5); opacity: 0; } }
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
-/* ============== МОБИЛЬНАЯ АДАПТАЦИЯ (MODAL) ============== */
-@media (max-width: 1024px) {
-  /* Сама панель становится модалкой по центру */
-  .how-it-works-sidebar.mobile-mode {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 90%;
-    max-width: 380px;
-
-    height: auto;
-    max-height: 85vh; /* Ограничение высоты */
-    overflow: hidden; /* Скроллится только scrollable-content */
-
-    z-index: 2001; /* Поверх Backdrop */
-    margin: 0;
-
-    box-shadow: 0 25px 80px rgba(0,0,0,0.9), 0 0 0 1px rgba(255,255,255,0.1);
-    animation: slideUpModal 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-
-  @keyframes slideUpModal {
-    from { opacity: 0; transform: translate(-50%, -40%) scale(0.9); }
-    to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-  }
+/* === MOBILE MODE OVERRIDES (MODAL STYLE) === */
+.how-it-works-sidebar.mobile-mode {
+  position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: 90%; max-width: 380px; height: auto; max-height: 90vh;
+  margin: 0; z-index: 2001; border: 1px solid var(--primary-color);
+  box-shadow: 0 0 50px rgba(0,0,0,0.8);
 }
+
+.mobile-view-container {
+  height: 100%;
+  min-height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mobile-slide { width: 100%; text-align: center; }
+
+.mobile-card {
+  padding: 1.5rem;
+  background: rgba(255,255,255,0.05);
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.step-icon-large { font-size: 3.5rem; margin-bottom: 0.5rem; display: inline-block; filter: drop-shadow(0 0 10px rgba(255,255,255,0.2)); }
+.mobile-step-title { font-size: 1.4rem; margin: 0; color: var(--primary-color); }
+.mobile-slide .step-description { font-size: 1rem; margin-bottom: 1rem; line-height: 1.5; color: rgba(255,255,255,0.8); }
+
+/* Footer for mobile */
+.mobile-footer { padding: 1rem 1.5rem; border-top: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2); margin-top: auto; }
+.dots { display: flex; justify-content: center; gap: 0.5rem; margin-bottom: 1rem; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.2); transition: all 0.3s; cursor: pointer; }
+.dot.active { background: var(--primary-color); transform: scale(1.2); }
+
+.nav-btns { display: flex; gap: 1rem; }
+.btn-nav { flex: 1; padding: 0.8rem; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; font-size: 1rem; transition: transform 0.2s; }
+.btn-nav.secondary { background: transparent; border: 1px solid rgba(255,255,255,0.2); color: #fff; }
+.btn-nav.primary { background: #fff; color: #000; }
+.btn-nav.finish { background: var(--primary-color); color: #fff; }
+.btn-nav:active { transform: scale(0.95); }
+
+/* Transitions */
+.slide-side-enter-active, .slide-side-leave-active { transition: all 0.3s ease; }
+.slide-side-enter-from { opacity: 0; transform: translateX(20px); }
+.slide-side-leave-to { opacity: 0; transform: translateX(-20px); }
 </style>
