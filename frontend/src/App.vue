@@ -1,121 +1,125 @@
 <template>
-  <canvas ref="canvasRef" id="bubble-background"></canvas>
+  <router-view v-if="isLanding" />
 
-  <div id="app-container" :class="{ 'sidebar-open': isTotalsSidebarOpen }">
+  <template v-else>
+    <canvas ref="canvasRef" id="bubble-background"></canvas>
 
-    <Transition name="slide-down">
-      <div v-if="!isOnline" class="offline-banner">
-        <div class="spinner"></div>
-        <span>No Internet Connection - Offline Mode</span>
-      </div>
-    </Transition>
+    <div id="app-container" :class="{ 'sidebar-open': isTotalsSidebarOpen }">
 
-    <div id="app-wrapper">
-
-      <UserHeader v-if="route.name === 'list'" />
-
-      <div class="content-grid" :class="{ 'closed-sidebar': !store.isHelpSidebarOpen || route.name !== 'list' }">
-        <main class="main-column">
-
-          <template v-if="!store.isBestShopsOpen">
-            <div class="top-controls" v-if="!store.isHelpSidebarOpen && route.name === 'list'">
-              <button class="btn-show-help" @click="store.toggleHelpSidebar">
-                <span class="help-icon">💡</span>
-                <span>How it works?</span>
-              </button>
-            </div>
-
-            <div class="add-item-toggle" v-if="route.name === 'list' && !store.isAddItemFormVisible">
-              <button class="btn btn-primary" @click="store.showAddItemForm">
-                + Add item
-              </button>
-            </div>
-
-            <AddItemForm v-if="route.name === 'list'" />
-
-            <router-view v-slot="{ Component }">
-              <Transition name="fade" mode="out-in">
-                <component :is="Component" />
-              </Transition>
-            </router-view>
-          </template>
-
-          <Transition name="fade" mode="out-in">
-            <BestShops v-if="store.isBestShopsOpen" />
-          </Transition>
-
-        </main>
-
-        <aside class="sidebar-column" v-if="route.name === 'list' && !store.isBestShopsOpen">
-          <Transition name="slide-fade">
-            <HowItWorksSidebar v-show="store.isHelpSidebarOpen" />
-          </Transition>
-        </aside>
-      </div>
-
-      <ShareModal />
-      <EditModal />
-      <ItemDetailModal />
-      <WelcomeModal />
-      <ChatWidget v-if="route.name === 'list'" />
-
-    </div>
-
-    <button
-      v-if="route.name === 'list' && !store.isAddItemFormVisible && !store.isBestShopsOpen"
-      class="btn-fab-totals"
-      @click="store.toggleTotalsModal"
-    >
-      <span class="fab-icon">💰</span>
-      <div class="fab-content">
-        <span class="fab-label">Best Total</span>
-        <span class="fab-value">{{ cheapestTotal }} MDL</span>
-      </div>
-    </button>
-
-    <Teleport to="body">
-      <Transition name="modal-fade">
-        <div class="totals-modal-backdrop" v-if="store.isTotalsModalOpen" @click.self="store.toggleTotalsModal">
-          <div class="totals-modal-content">
-            <button class="modal-close-btn" @click="store.toggleTotalsModal">×</button>
-
-            <div class="modal-header">
-              <div class="modal-icon">💰</div>
-              <h2>Price Summary</h2>
-            </div>
-
-            <div class="modal-body">
-              <div class="price-row store1">
-                <span class="store-name">🏪 Metro</span>
-                <span class="price-value">{{ store.totals.store1 }} <small>MDL</small></span>
-              </div>
-
-              <div class="price-row store2">
-                <span class="store-name">🏬 Linella</span>
-                <span class="price-value">{{ store.totals.store2 }} <small>MDL</small></span>
-              </div>
-
-              <div class="divider"></div>
-
-              <div class="difference-box" :class="diffCardClass">
-                <div class="diff-header">
-                  <span>{{ diffIcon }} {{ diffLabel }}</span>
-                </div>
-                <div class="diff-value">{{ Math.abs(Number(store.totals.diff)).toFixed(2) }} MDL</div>
-              </div>
-
-              <div class="best-deal-banner" v-if="bestStore">
-                <span>✨ Best Deal: {{ bestStore }}</span>
-              </div>
-
-              <p class="modal-note">* Only unpurchased items are counted</p>
-            </div>
-          </div>
+      <Transition name="slide-down">
+        <div v-if="!isOnline" class="offline-banner">
+          <div class="spinner"></div>
+          <span>No Internet Connection - Offline Mode</span>
         </div>
       </Transition>
-    </Teleport>
 
-  </div>
+      <div id="app-wrapper">
+
+        <UserHeader v-if="route.name === 'list'" />
+
+        <div class="content-grid" :class="{ 'closed-sidebar': !store.isHelpSidebarOpen || route.name !== 'list' }">
+          <main class="main-column">
+
+            <template v-if="!store.isBestShopsOpen">
+              <div class="top-controls" v-if="!store.isHelpSidebarOpen && route.name === 'list'">
+                <button class="btn-show-help" @click="store.toggleHelpSidebar">
+                  <span class="help-icon">💡</span>
+                  <span>How it works?</span>
+                </button>
+              </div>
+
+              <div class="add-item-toggle" v-if="route.name === 'list' && !store.isAddItemFormVisible">
+                <button class="btn btn-primary" @click="store.showAddItemForm">
+                  + Add item
+                </button>
+              </div>
+
+              <AddItemForm v-if="route.name === 'list'" />
+
+              <router-view v-slot="{ Component }">
+                <Transition name="fade" mode="out-in">
+                  <component :is="Component" />
+                </Transition>
+              </router-view>
+            </template>
+
+            <Transition name="fade" mode="out-in">
+              <BestShops v-if="store.isBestShopsOpen" />
+            </Transition>
+
+          </main>
+
+          <aside class="sidebar-column" v-if="route.name === 'list' && !store.isBestShopsOpen">
+            <Transition name="slide-fade">
+              <HowItWorksSidebar v-show="store.isHelpSidebarOpen" />
+            </Transition>
+          </aside>
+        </div>
+
+        <ShareModal />
+        <EditModal />
+        <ItemDetailModal />
+        <WelcomeModal />
+        <ChatWidget v-if="route.name === 'list'" />
+
+      </div>
+
+      <button
+        v-if="route.name === 'list' && !store.isAddItemFormVisible && !store.isBestShopsOpen"
+        class="btn-fab-totals"
+        @click="store.toggleTotalsModal"
+      >
+        <span class="fab-icon">💰</span>
+        <div class="fab-content">
+          <span class="fab-label">Best Total</span>
+          <span class="fab-value">{{ cheapestTotal }} MDL</span>
+        </div>
+      </button>
+
+      <Teleport to="body">
+        <Transition name="modal-fade">
+          <div class="totals-modal-backdrop" v-if="store.isTotalsModalOpen" @click.self="store.toggleTotalsModal">
+            <div class="totals-modal-content">
+              <button class="modal-close-btn" @click="store.toggleTotalsModal">×</button>
+
+              <div class="modal-header">
+                <div class="modal-icon">💰</div>
+                <h2>Price Summary</h2>
+              </div>
+
+              <div class="modal-body">
+                <div class="price-row store1">
+                  <span class="store-name">🏪 Metro</span>
+                  <span class="price-value">{{ store.totals.store1 }} <small>MDL</small></span>
+                </div>
+
+                <div class="price-row store2">
+                  <span class="store-name">🏬 Linella</span>
+                  <span class="price-value">{{ store.totals.store2 }} <small>MDL</small></span>
+                </div>
+
+                <div class="divider"></div>
+
+                <div class="difference-box" :class="diffCardClass">
+                  <div class="diff-header">
+                    <span>{{ diffIcon }} {{ diffLabel }}</span>
+                  </div>
+                  <div class="diff-value">{{ Math.abs(Number(store.totals.diff)).toFixed(2) }} MDL</div>
+                </div>
+
+                <div class="best-deal-banner" v-if="bestStore">
+                  <span>✨ Best Deal: {{ bestStore }}</span>
+                </div>
+
+                <p class="modal-note">* Only unpurchased items are counted</p>
+              </div>
+            </div>
+          </div>
+        </Transition>
+      </Teleport>
+
+    </div>
+  </template>
 </template>
 
 <script setup>
@@ -133,7 +137,7 @@ import ItemDetailModal from './components/ItemDetailModal.vue'
 import WelcomeModal from './components/WelcomeModal.vue'
 import ChatWidget from './components/ChatWidget.vue'
 import HowItWorksSidebar from './components/HowItWorksSidebar.vue'
-import BestShops from './components/BestShops.vue' // <--- IMPORT HERE
+import BestShops from './components/BestShops.vue'
 
 const store = useListStore()
 const { activeListId, isTotalsSidebarOpen, totals, isTotalsModalOpen } = storeToRefs(store)
@@ -141,6 +145,9 @@ const { activeListId, isTotalsSidebarOpen, totals, isTotalsModalOpen } = storeTo
 const route = useRoute()
 const router = useRouter()
 const isOnline = ref(navigator.onLine)
+
+// Определяем, находимся ли мы на Лэндинге
+const isLanding = computed(() => route.name === 'landing')
 
 const updateOnlineStatus = () => {
   isOnline.value = navigator.onLine
@@ -166,7 +173,8 @@ watch(activeListId, (newId) => {
   if (newId) {
     router.push(`/list/${newId}`)
   } else {
-    router.push('/')
+    // Если вышли из списка, идем в dashboard, а не на landing (т.к. уже авторизованы)
+    router.push('/dashboard')
   }
 })
 
@@ -222,6 +230,9 @@ const bestStore = computed(() => {
   return null
 })
 
+// Фон подключаем только если мы НЕ на лэндинге (там свой фон)
+// Но так как useGalaxyBackground требует mounted canvas, а у нас v-if,
+// используем watchEffect внутри composable или просто инициализируем, когда isLanding = false
 const { canvasRef } = useGalaxyBackground({
   focal: [0.5, 0.5],
   rotation: [1.0, 0.0],
@@ -240,7 +251,6 @@ const { canvasRef } = useGalaxyBackground({
 </script>
 
 <style>
-/* (Стили App.vue остаются те же, их менять не нужно) */
 #bubble-background {
   position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
 }
@@ -285,7 +295,6 @@ const { canvasRef } = useGalaxyBackground({
 </style>
 
 <style scoped>
-/* (Остальные scoped стили App.vue остаются без изменений) */
 * {
   box-sizing: border-box;
 }
