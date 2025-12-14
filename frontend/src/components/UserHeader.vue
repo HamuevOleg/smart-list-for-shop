@@ -22,11 +22,14 @@
         </div>
       </div>
 
-      <h2 class="list-title">{{ store.activeList?.name }}</h2>
+      <h2 class="list-title">
+        {{ store.isBestShopsOpen ? '🇲🇩 Guide' : store.activeList?.name }}
+      </h2>
 
       <button
         class="mobile-total-indicator"
         @click="store.toggleTotalsModal"
+        v-if="!store.isBestShopsOpen"
       >
         💰 {{ cheapestTotal }}
       </button>
@@ -44,7 +47,7 @@
       </div>
     </div>
 
-    <div class="participants-bar" v-if="otherParticipants.length > 0">
+    <div class="participants-bar" v-if="otherParticipants.length > 0 && !store.isBestShopsOpen">
       <span class="label">Also here:</span>
       <div class="participants-list">
         <div
@@ -69,11 +72,28 @@
     </div>
 
     <nav class="header-nav">
-      <a class="nav-tab active" @click.prevent="store.backToListSelector">
-        Lists
+      <a
+        class="nav-tab"
+        :class="{ active: !store.isBestShopsOpen }"
+        @click.prevent="store.closeBestShops"
+      >
+        Items
       </a>
+
+      <a
+        class="nav-tab"
+        :class="{ active: store.isBestShopsOpen }"
+        @click.prevent="store.openBestShops"
+      >
+        Best Shops
+      </a>
+
       <a class="nav-tab disabled" href="#">
         Receipts (soon)
+      </a>
+
+      <a class="nav-tab back-link" @click.prevent="store.backToListSelector">
+        ← Lists
       </a>
     </nav>
   </header>
@@ -129,6 +149,7 @@ const cheapestTotal = computed(() => {
 </script>
 
 <style scoped>
+/* Все стили остаются прежними, добавляем только стили для back-link */
 .user-header {
   padding: 1rem;
   background-color: var(--card-color);
@@ -216,7 +237,6 @@ const cheapestTotal = computed(() => {
   transition: all 0.2s ease;
 }
 
-/* По умолчанию (десктоп): показываем текст, скрываем мобильную иконку */
 .desktop-text { display: inline; }
 .mobile-icon { display: none; }
 
@@ -274,19 +294,14 @@ const cheapestTotal = computed(() => {
 .status-dot.online { background-color: #10b981; box-shadow: 0 0 5px #10b981; }
 .status-dot.away { background-color: #f59e0b; }
 
-/* === МОБИЛЬНАЯ АДАПТАЦИЯ === */
 @media (max-width: 600px) {
   .list-title { display: none; }
   .mobile-total-indicator { display: block; }
-
   .header-top { justify-content: space-between; }
-
-  /* Переключаем режим кнопок на "только иконки" */
   .desktop-text { display: none; }
   .mobile-icon { display: inline; }
-
   .action-btn {
-    padding: 0.5rem; /* Квадратные кнопки */
+    padding: 0.5rem;
     min-width: 40px;
     height: 40px;
     font-size: 1.2rem;
@@ -297,6 +312,7 @@ const cheapestTotal = computed(() => {
   display: flex;
   gap: 0.5rem;
   border-bottom: 1px solid var(--border-color);
+  overflow-x: auto; /* Для мобильных, если вкладок много */
 }
 .nav-tab {
   padding: 0.5rem 1rem;
@@ -306,8 +322,16 @@ const cheapestTotal = computed(() => {
   cursor: pointer;
   border-bottom: 3px solid transparent;
   transition: all 0.2s ease;
+  white-space: nowrap;
 }
 .nav-tab:hover { color: var(--secondary-color); }
 .nav-tab.active { color: var(--primary-color); border-bottom-color: var(--primary-color); }
-.nav-tab.disabled { color: var(--border-color); cursor: not-allowed; }
+.nav-tab.disabled { color: var(--border-color); cursor: not-allowed; opacity: 0.5; }
+
+.back-link {
+  margin-left: auto;
+  color: var(--text-light);
+  opacity: 0.8;
+}
+.back-link:hover { opacity: 1; color: #fff; }
 </style>

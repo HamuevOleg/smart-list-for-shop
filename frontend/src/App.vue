@@ -17,29 +17,36 @@
       <div class="content-grid" :class="{ 'closed-sidebar': !store.isHelpSidebarOpen || route.name !== 'list' }">
         <main class="main-column">
 
-          <div class="top-controls" v-if="!store.isHelpSidebarOpen && route.name === 'list'">
-            <button class="btn-show-help" @click="store.toggleHelpSidebar">
-              <span class="help-icon">💡</span>
-              <span>How it works?</span>
-            </button>
-          </div>
+          <template v-if="!store.isBestShopsOpen">
+            <div class="top-controls" v-if="!store.isHelpSidebarOpen && route.name === 'list'">
+              <button class="btn-show-help" @click="store.toggleHelpSidebar">
+                <span class="help-icon">💡</span>
+                <span>How it works?</span>
+              </button>
+            </div>
 
-          <div class="add-item-toggle" v-if="route.name === 'list' && !store.isAddItemFormVisible">
-            <button class="btn btn-primary" @click="store.showAddItemForm">
-              + Add item
-            </button>
-          </div>
+            <div class="add-item-toggle" v-if="route.name === 'list' && !store.isAddItemFormVisible">
+              <button class="btn btn-primary" @click="store.showAddItemForm">
+                + Add item
+              </button>
+            </div>
 
-          <AddItemForm v-if="route.name === 'list'" />
+            <AddItemForm v-if="route.name === 'list'" />
 
-          <router-view v-slot="{ Component }">
-            <Transition name="fade" mode="out-in">
-              <component :is="Component" />
-            </Transition>
-          </router-view>
+            <router-view v-slot="{ Component }">
+              <Transition name="fade" mode="out-in">
+                <component :is="Component" />
+              </Transition>
+            </router-view>
+          </template>
+
+          <Transition name="fade" mode="out-in">
+            <BestShops v-if="store.isBestShopsOpen" />
+          </Transition>
+
         </main>
 
-        <aside class="sidebar-column" v-if="route.name === 'list'">
+        <aside class="sidebar-column" v-if="route.name === 'list' && !store.isBestShopsOpen">
           <Transition name="slide-fade">
             <HowItWorksSidebar v-show="store.isHelpSidebarOpen" />
           </Transition>
@@ -55,7 +62,7 @@
     </div>
 
     <button
-      v-if="route.name === 'list' && !store.isAddItemFormVisible"
+      v-if="route.name === 'list' && !store.isAddItemFormVisible && !store.isBestShopsOpen"
       class="btn-fab-totals"
       @click="store.toggleTotalsModal"
     >
@@ -126,6 +133,7 @@ import ItemDetailModal from './components/ItemDetailModal.vue'
 import WelcomeModal from './components/WelcomeModal.vue'
 import ChatWidget from './components/ChatWidget.vue'
 import HowItWorksSidebar from './components/HowItWorksSidebar.vue'
+import BestShops from './components/BestShops.vue' // <--- IMPORT HERE
 
 const store = useListStore()
 const { activeListId, isTotalsSidebarOpen, totals, isTotalsModalOpen } = storeToRefs(store)
@@ -232,6 +240,7 @@ const { canvasRef } = useGalaxyBackground({
 </script>
 
 <style>
+/* (Стили App.vue остаются те же, их менять не нужно) */
 #bubble-background {
   position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
 }
@@ -276,11 +285,11 @@ const { canvasRef } = useGalaxyBackground({
 </style>
 
 <style scoped>
+/* (Остальные scoped стили App.vue остаются без изменений) */
 * {
   box-sizing: border-box;
 }
 
-/* === MAIN GRID LAYOUT & ANIMATION === */
 .content-grid {
   display: grid;
   grid-template-columns: 1fr 360px;
@@ -302,7 +311,6 @@ const { canvasRef } = useGalaxyBackground({
   overflow: hidden;
 }
 
-/* === TOP CONTROLS (Open Help Btn) === */
 .top-controls {
   display: flex;
   justify-content: flex-end;
