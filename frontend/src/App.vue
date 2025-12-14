@@ -1,6 +1,8 @@
 <template>
+  <!-- Если на лендинге - показываем только router-view без фона -->
   <router-view v-if="isLanding" />
 
+  <!-- Если в приложении - показываем фон + весь UI -->
   <template v-else>
     <canvas ref="canvasRef" id="bubble-background"></canvas>
 
@@ -231,8 +233,6 @@ const bestStore = computed(() => {
 })
 
 // Фон подключаем только если мы НЕ на лэндинге (там свой фон)
-// Но так как useGalaxyBackground требует mounted canvas, а у нас v-if,
-// используем watchEffect внутри composable или просто инициализируем, когда isLanding = false
 const { canvasRef } = useGalaxyBackground({
   focal: [0.5, 0.5],
   rotation: [1.0, 0.0],
