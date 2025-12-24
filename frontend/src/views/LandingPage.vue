@@ -5,12 +5,15 @@ import Lenis from 'lenis';
 import ScrollStack from '@/components/ScrollStack.vue';
 import MagicCard from '@/components/MagicCard.vue';
 import CountUp from '@/components/CountUp.vue';
+// УДАЛЕНО: Импорты для MetallicPaint больше не нужны
 
 const router = useRouter();
 let lenis = null;
 
+// УДАЛЕНО: Вся логика imageData, unicornSvg и loadEffectImage
+
 onMounted(() => {
-  // Инициализация Lenis
+  // Инициализация Lenis для плавного скролла
   lenis = new Lenis({
     duration: 1.2,
     easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
@@ -169,6 +172,10 @@ const toggleFaq = (index) => {
           Shopping Lists,<br/>
           <span class="gradient-text">Reimagined</span>
         </h1>
+
+        <div class="hero-logo-container">
+          <img src="@/assets/unicorn-logo.png" alt="SmartList Unicorn Logo" class="hero-logo" />
+        </div>
 
         <p class="hero-subtitle">
           Real-time collaboration. AI-powered intelligence. Never forget the milk again.
@@ -593,6 +600,9 @@ const toggleFaq = (index) => {
 .hero-section {
   text-align: center;
   padding: 8rem 0 6rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .hero-badge {
@@ -637,6 +647,26 @@ const toggleFaq = (index) => {
   0%, 100% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
 }
+
+/* --- ИЗМЕНЕНО: Стили для контейнера и изображения логотипа --- */
+.hero-logo-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: -20px; /* Немного подтягиваем вверх */
+  margin-bottom: 30px;
+  z-index: 2;
+  animation: fadeInUp 0.8s ease 0.3s backwards;
+}
+
+.hero-logo {
+  width: 180px; /* Размер для десктопа */
+  height: auto;
+  /* Добавляем красивую тень для объема */
+  filter: drop-shadow(0 10px 20px rgba(139, 92, 246, 0.3));
+}
+
+/* УДАЛЕНО: Стили для .metallic-wrapper */
 
 .hero-subtitle {
   font-size: clamp(1rem, 3vw, 1.3rem);
@@ -1233,6 +1263,11 @@ const toggleFaq = (index) => {
     font-size: 2.5rem;
   }
 
+  /* ИЗМЕНЕНО: Размер логотипа для мобильных устройств */
+  .hero-logo {
+    width: 120px;
+  }
+
   .hero-stats {
     gap: 2rem;
   }
@@ -1265,7 +1300,7 @@ const toggleFaq = (index) => {
   }
 }
 
-/* === HERO STATS STYLES (ADDED) === */
+/* === HERO STATS STYLES === */
 .hero-stats {
   margin-top: 4rem;
   padding-top: 2rem;
