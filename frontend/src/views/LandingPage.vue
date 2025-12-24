@@ -1,10 +1,10 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
-// ИСПРАВЛЕННЫЙ ИМПОРТ:
 import Lenis from 'lenis';
 import ScrollStack from '@/components/ScrollStack.vue';
 import MagicCard from '@/components/MagicCard.vue';
+import CountUp from '@/components/CountUp.vue';
 
 const router = useRouter();
 let lenis = null;
@@ -33,7 +33,6 @@ const goToApp = () => {
   router.push('/dashboard');
 };
 
-// ... остальной код (данные const features и т.д.) оставляй как был ...
 const features = [
   {
     id: 1,
@@ -137,7 +136,6 @@ const toggleFaq = (index) => {
 <template>
   <div class="landing-page">
 
-    <!-- Animated Background -->
     <div class="animated-bg">
       <div class="gradient-orb orb-1"></div>
       <div class="gradient-orb orb-2"></div>
@@ -147,7 +145,6 @@ const toggleFaq = (index) => {
 
     <div class="content-container">
 
-      <!-- Navbar -->
       <nav class="navbar">
         <div class="nav-content">
           <div class="logo">
@@ -162,7 +159,6 @@ const toggleFaq = (index) => {
         </div>
       </nav>
 
-      <!-- Hero Section -->
       <section class="hero-section">
         <div class="hero-badge">
           <span class="badge-icon">✨</span>
@@ -190,22 +186,38 @@ const toggleFaq = (index) => {
         </div>
 
         <div class="hero-stats">
-          <div class="stat">
-            <div class="stat-number">10K+</div>
-            <div class="stat-label">Active Users</div>
-          </div>
-          <div class="stat">
-            <div class="stat-number">500K+</div>
-            <div class="stat-label">Items Added</div>
-          </div>
-          <div class="stat">
-            <div class="stat-number">4.9/5</div>
-            <div class="stat-label">User Rating</div>
+          <div class="stats-container">
+
+            <div class="stat-item">
+              <h2>Active Users</h2>
+              <div class="number text-green-500">
+                <CountUp
+                  :to="15000"
+                  :duration="2.5"
+                  separator=","
+                  class-name="tabular-nums"
+                />
+                <span>+</span>
+              </div>
+            </div>
+
+            <div class="stat-item">
+              <h2>Lists Created</h2>
+              <div class="number text-purple-500">
+                <CountUp
+                  :to="85.5"
+                  :decimals="1"
+                  :duration="3"
+                  class-name="tabular-nums"
+                />
+                <span>k</span>
+              </div>
+            </div>
+
           </div>
         </div>
       </section>
 
-      <!-- Features Scroll Stack -->
       <section class="features-section">
         <div class="section-header">
           <h2 class="section-title">Why SmartList?</h2>
@@ -225,7 +237,6 @@ const toggleFaq = (index) => {
         </ScrollStack>
       </section>
 
-      <!-- Product Demo Section -->
       <section class="demo-section">
         <div class="demo-grid">
 
@@ -297,7 +308,6 @@ const toggleFaq = (index) => {
         </div>
       </section>
 
-      <!-- Pricing Section -->
       <section class="pricing-section" id="pricing">
         <div class="section-header">
           <h2 class="section-title">Simple Pricing</h2>
@@ -339,7 +349,6 @@ const toggleFaq = (index) => {
         </div>
       </section>
 
-      <!-- FAQ Section -->
       <section class="faq-section" id="faq">
         <div class="section-header">
           <h2 class="section-title">Frequently Asked Questions</h2>
@@ -367,7 +376,6 @@ const toggleFaq = (index) => {
         </div>
       </section>
 
-      <!-- CTA Section -->
       <section class="cta-section">
         <div class="cta-content">
           <h2 class="cta-title">Ready to get started?</h2>
@@ -379,7 +387,6 @@ const toggleFaq = (index) => {
         </div>
       </section>
 
-      <!-- Footer -->
       <footer class="footer">
         <div class="footer-content">
           <div class="footer-brand">
@@ -689,32 +696,6 @@ const toggleFaq = (index) => {
 
 .btn-primary:hover .btn-arrow {
   transform: translateX(5px);
-}
-
-.hero-stats {
-  display: flex;
-  justify-content: center;
-  gap: 4rem;
-  flex-wrap: wrap;
-  animation: fadeInUp 0.8s ease 0.8s backwards;
-}
-
-.stat {
-  text-align: center;
-}
-
-.stat-number {
-  font-size: 2.5rem;
-  font-weight: 800;
-  background: linear-gradient(135deg, #ec4899, #8b5cf6);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.stat-label {
-  color: #9ca3af;
-  font-size: 0.9rem;
-  margin-top: 0.25rem;
 }
 
 @keyframes fadeInUp {
@@ -1282,5 +1263,56 @@ const toggleFaq = (index) => {
   .cta-title {
     font-size: 2rem;
   }
+}
+
+/* === HERO STATS STYLES (ADDED) === */
+.hero-stats {
+  margin-top: 4rem;
+  padding-top: 2rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  animation: fadeInUp 0.8s ease 0.8s backwards;
+}
+
+.stats-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 3rem;
+  flex-wrap: wrap;
+}
+
+.stat-item {
+  text-align: center;
+}
+
+.stat-item h2 {
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #9ca3af;
+  margin-bottom: 0.5rem;
+}
+
+.number {
+  font-size: 3rem;
+  font-weight: 800;
+  line-height: 1;
+  display: flex;
+  justify-content: center;
+  align-items: baseline;
+}
+
+.text-green-500 {
+  color: #10b981;
+  text-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+}
+
+.text-purple-500 {
+  color: #a855f7;
+  text-shadow: 0 0 20px rgba(168, 85, 247, 0.3);
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
 }
 </style>
