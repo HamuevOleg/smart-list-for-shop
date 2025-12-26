@@ -1,7 +1,6 @@
-// frontend/src/router/index.js
 import { createRouter, createWebHistory } from 'vue-router'
 import { useListStore } from '@/stores/listStore'
-import { useUserStore } from '@/stores/userStore' // Импорт стора юзера
+import { useUserStore } from '@/stores/userStore'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -9,17 +8,26 @@ const router = createRouter({
     {
       path: '/',
       name: 'landing',
-      component: () => import('@/views/LandingPage.vue') // Ленивая загрузка
+      component: () => import('@/views/LandingPage.vue')
     },
     {
       path: '/dashboard',
-      name: 'home', // Старое имя 'home' теперь здесь
-      component: () => import('@/components/ListSelector.vue'),
-      meta: { requiresAuth: true } // Помечаем, что нужна регистрация
+      name: 'home',
+      component: () => import('@/views/DashboardView.vue'), // Используем DashboardView
+      meta: { requiresAuth: true }
     },
     {
       path: '/list/:id',
       name: 'list',
+      component: () => import('@/components/ShoppingList.vue'), // Или DashboardView, если список внутри него
+      // В твоей структуре список рендерится внутри App.vue/RouterView?
+      // Если ты хочешь открывать конкретный список, но оставаться в лейауте...
+      // Давай оставим как было, но проверим DashboardView.
+      // В DashboardView список открывается через router.push(`/list/${listId}`)
+      // Значит этот роут нужен.
+      // Обычно список это вложенный компонент или отдельная страница.
+      // В твоем App.vue структура сложная (фон + сайдбары).
+      // Если ShoppingList.vue это просто компонент списка, то ОК.
       component: () => import('@/components/ShoppingList.vue'),
       meta: { requiresAuth: true },
       beforeEnter: async (to, from, next) => {
@@ -28,26 +36,23 @@ const router = createRouter({
         if (store.activeListId) {
           next()
         } else {
-          next('/dashboard') // Если списка нет, кидаем в дешборд
+          next('/dashboard')
         }
       }
     }
   ]
 })
 
-// Глобальная защита маршрутов
 router.beforeEach((to, from, next) => {
   const userStore = useUserStore()
 
-  // 1. Если маршрут требует регистрации, а юзера нет -> на Лэндинг
   if (to.meta.requiresAuth && !userStore.isRegistered) {
     next('/')
   }
-  // 2. Если юзер уже есть и он пытается зайти на Лэндинг -> в Дэшборд
+
   else if (to.name === 'landing' && userStore.isRegistered) {
     next('/dashboard')
   }
-  // 3. Иначе пускаем куда шел
   else {
     next()
   }

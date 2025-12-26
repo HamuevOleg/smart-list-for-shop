@@ -12,6 +12,9 @@ public class ShoppingList {
     @Id
     private String id;
     private String name;
+
+    private String owner; // Email создателя
+
     private List<ShoppingItem> items = new ArrayList<>();
     private List<ListParticipant> participants = new ArrayList<>();
     private List<ChatMessage> messages = new ArrayList<>();

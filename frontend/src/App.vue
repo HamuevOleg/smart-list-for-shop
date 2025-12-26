@@ -1,8 +1,6 @@
 <template>
-  <!-- Если на лендинге - показываем только router-view без фона -->
   <router-view v-if="isLanding" />
 
-  <!-- Если в приложении - показываем фон + весь UI -->
   <template v-else>
     <canvas ref="canvasRef" id="bubble-background"></canvas>
 
@@ -61,7 +59,10 @@
         <ShareModal />
         <EditModal />
         <ItemDetailModal />
-        <WelcomeModal />
+
+        <AuthModal />
+        <ProfileEditModal />
+
         <ChatWidget v-if="route.name === 'list'" />
 
       </div>
@@ -136,7 +137,8 @@ import AddItemForm from './components/AddItemForm.vue'
 import ShareModal from './components/ShareModal.vue'
 import EditModal from './components/EditModal.vue'
 import ItemDetailModal from './components/ItemDetailModal.vue'
-import WelcomeModal from './components/WelcomeModal.vue'
+import AuthModal from './components/AuthModal.vue'
+import ProfileEditModal from './components/ProfileEditModal.vue' // <--- Импорт
 import ChatWidget from './components/ChatWidget.vue'
 import HowItWorksSidebar from './components/HowItWorksSidebar.vue'
 import BestShops from './components/BestShops.vue'

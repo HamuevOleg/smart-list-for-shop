@@ -4,18 +4,17 @@
       <div class="user-info">
         <div class="avatar-wrapper">
           <img
-            v-if="isImage(userStore.user.avatar)"
-            :src="userStore.user.avatar"
+            :src="userStore.user.avatar || '/default_avatar.png'"
             alt="pfp"
             class="avatar-img"
           />
-          <div v-else class="avatar-emoji">
-            {{ userStore.user.avatar }}
-          </div>
         </div>
 
         <div class="user-text">
-          <span class="username">{{ userStore.user.username }}</span>
+          <div class="name-row">
+            <span class="username">{{ userStore.user.username }}</span>
+            <button class="btn-edit" @click="userStore.openProfileEdit">✎</button>
+          </div>
           <button @click="handleLogout" class="btn-logout">
             Change user ↺
           </button>
@@ -58,13 +57,9 @@
         >
           <div class="p-avatar-wrapper">
             <img
-              v-if="isImage(p.avatar)"
-              :src="p.avatar"
+              :src="p.avatar || '/default_avatar.png'"
               class="p-avatar-img"
             />
-            <div v-else class="p-avatar-emoji">
-              {{ p.avatar }}
-            </div>
             <span class="status-dot" :class="getStatusClass(p.lastSeen)"></span>
           </div>
         </div>
@@ -107,10 +102,6 @@ import { useUserStore } from '@/stores/userStore'
 const store = useListStore()
 const userStore = useUserStore()
 
-const isImage = (avatar) => {
-  return avatar && (avatar.startsWith('http') || avatar.startsWith('data:image'))
-}
-
 const handleLogout = () => {
   if (confirm('Are you sure you want to log out?')) {
     userStore.logout()
@@ -149,7 +140,6 @@ const cheapestTotal = computed(() => {
 </script>
 
 <style scoped>
-/* Все стили остаются прежними, добавляем только стили для back-link */
 .user-header {
   padding: 1rem;
   background-color: var(--card-color);
@@ -176,6 +166,20 @@ const cheapestTotal = computed(() => {
   align-items: flex-start;
   line-height: 1.2;
 }
+
+.name-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-edit {
+  background: none; border: none; color: var(--text-light);
+  font-size: 1rem; cursor: pointer; padding: 2px;
+  transition: color 0.2s;
+}
+.btn-edit:hover { color: var(--primary-color); }
+
 .btn-logout {
   background: none;
   border: none;
@@ -188,13 +192,15 @@ const cheapestTotal = computed(() => {
 }
 .btn-logout:hover { opacity: 1; color: var(--primary-color); }
 
-.avatar-img, .avatar-emoji {
+.avatar-wrapper {
   width: 45px; height: 45px;
   border-radius: 50%;
   border: 2px solid var(--primary-color);
-  object-fit: cover;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 1.5rem; background: var(--bg-input);
+  overflow: hidden;
+  background: var(--bg-input);
+}
+.avatar-img {
+  width: 100%; height: 100%; object-fit: cover;
 }
 
 .username { font-weight: 700; font-size: 1.1rem; color: #fff; }
@@ -224,72 +230,32 @@ const cheapestTotal = computed(() => {
   transform: scale(1.05);
 }
 
-.header-actions {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.action-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.5rem 1rem;
-  transition: all 0.2s ease;
-}
-
+.header-actions { display: flex; gap: 0.5rem; }
+.action-btn { display: flex; align-items: center; justify-content: center; padding: 0.5rem 1rem; transition: all 0.2s ease; }
 .desktop-text { display: inline; }
 .mobile-icon { display: none; }
 
 .participants-bar {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 1rem;
-  padding: 0.5rem 0.75rem;
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 12px;
-  border: 1px solid var(--border-color);
+  display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;
+  padding: 0.5rem 0.75rem; background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px; border: 1px solid var(--border-color);
 }
-.label {
-  font-size: 0.8rem;
-  color: var(--text-light);
-  font-weight: 600;
-  white-space: nowrap;
-}
-.participants-list {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-.participant {
-  position: relative;
-  transition: transform 0.2s;
-  cursor: help;
-}
-.participant:hover {
-  transform: translateY(-2px);
-}
+.label { font-size: 0.8rem; color: var(--text-light); font-weight: 600; white-space: nowrap; }
+.participants-list { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.participant { position: relative; transition: transform 0.2s; cursor: help; }
+.participant:hover { transform: translateY(-2px); }
 
-.p-avatar-wrapper {
-  position: relative;
-  width: 32px; height: 32px;
-}
-.p-avatar-img, .p-avatar-emoji {
-  width: 100%; height: 100%;
-  border-radius: 50%;
+.p-avatar-wrapper { position: relative; width: 32px; height: 32px; }
+.p-avatar-img {
+  width: 100%; height: 100%; border-radius: 50%;
   border: 2px solid var(--card-color);
-  background: var(--bg-input);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 1.2rem; object-fit: cover;
+  background: var(--bg-input); object-fit: cover;
 }
 
 .status-dot {
-  position: absolute;
-  bottom: -2px; right: -2px;
-  width: 10px; height: 10px;
-  border-radius: 50%;
-  border: 2px solid var(--card-color);
-  background-color: #94a3b8;
+  position: absolute; bottom: -2px; right: -2px;
+  width: 10px; height: 10px; border-radius: 50%;
+  border: 2px solid var(--card-color); background-color: #94a3b8;
 }
 .status-dot.online { background-color: #10b981; box-shadow: 0 0 5px #10b981; }
 .status-dot.away { background-color: #f59e0b; }
@@ -300,38 +266,18 @@ const cheapestTotal = computed(() => {
   .header-top { justify-content: space-between; }
   .desktop-text { display: none; }
   .mobile-icon { display: inline; }
-  .action-btn {
-    padding: 0.5rem;
-    min-width: 40px;
-    height: 40px;
-    font-size: 1.2rem;
-  }
+  .action-btn { padding: 0.5rem; min-width: 40px; height: 40px; font-size: 1.2rem; }
 }
 
-.header-nav {
-  display: flex;
-  gap: 0.5rem;
-  border-bottom: 1px solid var(--border-color);
-  overflow-x: auto; /* Для мобильных, если вкладок много */
-}
+.header-nav { display: flex; gap: 0.5rem; border-bottom: 1px solid var(--border-color); overflow-x: auto; }
 .nav-tab {
-  padding: 0.5rem 1rem;
-  font-weight: 600;
-  color: var(--text-light);
-  text-decoration: none;
-  cursor: pointer;
-  border-bottom: 3px solid transparent;
-  transition: all 0.2s ease;
-  white-space: nowrap;
+  padding: 0.5rem 1rem; font-weight: 600; color: var(--text-light);
+  text-decoration: none; cursor: pointer; border-bottom: 3px solid transparent;
+  transition: all 0.2s ease; white-space: nowrap;
 }
 .nav-tab:hover { color: var(--secondary-color); }
 .nav-tab.active { color: var(--primary-color); border-bottom-color: var(--primary-color); }
 .nav-tab.disabled { color: var(--border-color); cursor: not-allowed; opacity: 0.5; }
-
-.back-link {
-  margin-left: auto;
-  color: var(--text-light);
-  opacity: 0.8;
-}
+.back-link { margin-left: auto; color: var(--text-light); opacity: 0.8; }
 .back-link:hover { opacity: 1; color: #fff; }
 </style>

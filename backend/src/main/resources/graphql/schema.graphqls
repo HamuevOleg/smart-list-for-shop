@@ -1,5 +1,18 @@
 # --- TYPES ---
 
+type User {
+    id: ID!
+    email: String!
+    username: String
+    avatar: String
+    subscription: String # "FREE", "PRO", "FAMILY"
+}
+
+type AuthPayload {
+    token: String!
+    user: User!
+}
+
 type ListParticipant {
     username: String
     avatar: String
@@ -19,8 +32,6 @@ type ShoppingItem {
     userPrice   : Float
     completed   : Boolean!
     imageUrl    : String
-
-    # Поля авторов
     addedBy: String
     addedByAvatar: String
     completedBy: String
@@ -30,9 +41,18 @@ type ShoppingItem {
 type ShoppingList {
     id    : ID!
     name  : String!
+    owner : String # Email владельца
     items : [ShoppingItem]!
     participants: [ListParticipant]
     messages: [ChatMessage]
+}
+
+type ChatMessage {
+    id: ID
+    sender: String
+    avatar: String
+    text: String
+    timestamp: String
 }
 
 # --- INPUTS ---
@@ -43,15 +63,15 @@ input UserInput {
 }
 
 input AddItemInput {
-    name       : String!
-    quantity   : Float
-    unit       : String
-    category   : String
-    dueDate    : String
-    comment    : String
+    name: String!
+    quantity: Float
+    unit: String
+    category: String
+    dueDate: String
+    comment: String
     priceStore1: Float
     priceStore2: Float
-    userPrice  : Float
+    userPrice: Float
 }
 
 input UpdateItemInput {
@@ -71,25 +91,27 @@ input UpdateItemInput {
 
 type Query {
     allLists: [ShoppingList]!
-
     listById(id: ID!, user: UserInput): ShoppingList
-
     searchImages(query: String!): [String]!
 }
 
 # --- MUTATION ---
 
 type Mutation {
+    # Auth
+    requestLoginCode(email: String!): Boolean!
+    loginWithCode(email: String!, code: String!): AuthPayload!
+    updateUserProfile(username: String!, avatar: String!): User!
+
+    # Subscription (НОВОЕ)
+    updateUserSubscription(plan: String!): User!
+
+    # Lists
     createList(name: String!): ShoppingList!
-
     addItem(listId: ID!, itemInput: AddItemInput!, user: UserInput!): ShoppingItem!
-
     updateItem(listId: ID!, itemId: ID!, itemInput: UpdateItemInput!): ShoppingItem!
-
     removeItem(listId: ID!, itemId: ID!): Boolean!
-
     toggleItem(listId: ID!, itemId: ID!, completed: Boolean!, user: UserInput!): ShoppingItem!
-
     sendMessage(listId: ID!, text: String!, user: UserInput!): ChatMessage!
 }
 
@@ -97,12 +119,4 @@ type Mutation {
 
 type Subscription {
     listUpdated(listId: ID!): ShoppingList
-}
-
-type ChatMessage {
-    id: ID
-    sender: String
-    avatar: String
-    text: String
-    timestamp: String
 }
