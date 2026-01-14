@@ -1,3 +1,4 @@
+// frontend/src/router/index.js
 import { createRouter, createWebHistory } from 'vue-router'
 import { useListStore } from '@/stores/listStore'
 import { useUserStore } from '@/stores/userStore'
@@ -12,22 +13,34 @@ const router = createRouter({
     },
     {
       path: '/dashboard',
-      name: 'home',
-      component: () => import('@/views/DashboardView.vue'), // Используем DashboardView
-      meta: { requiresAuth: true }
+      component: () => import('@/views/DashboardView.vue'),
+      meta: { requiresAuth: true },
+      children: [
+        {
+          path: '',
+          name: 'dashboard-home',
+          component: () => import('@/views/dashboard/HomeView.vue')
+        },
+        {
+          path: 'activity',
+          name: 'dashboard-activity',
+          component: () => import('@/views/dashboard/ActivityView.vue')
+        },
+        {
+          path: 'premium',
+          name: 'dashboard-premium',
+          component: () => import('@/views/dashboard/PremiumView.vue')
+        },
+        {
+          path: 'settings',
+          name: 'dashboard-settings',
+          component: () => import('@/views/dashboard/SettingsView.vue')
+        }
+      ]
     },
     {
       path: '/list/:id',
       name: 'list',
-      component: () => import('@/components/ShoppingList.vue'), // Или DashboardView, если список внутри него
-      // В твоей структуре список рендерится внутри App.vue/RouterView?
-      // Если ты хочешь открывать конкретный список, но оставаться в лейауте...
-      // Давай оставим как было, но проверим DashboardView.
-      // В DashboardView список открывается через router.push(`/list/${listId}`)
-      // Значит этот роут нужен.
-      // Обычно список это вложенный компонент или отдельная страница.
-      // В твоем App.vue структура сложная (фон + сайдбары).
-      // Если ShoppingList.vue это просто компонент списка, то ОК.
       component: () => import('@/components/ShoppingList.vue'),
       meta: { requiresAuth: true },
       beforeEnter: async (to, from, next) => {
@@ -45,15 +58,11 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
   const userStore = useUserStore()
-
   if (to.meta.requiresAuth && !userStore.isRegistered) {
     next('/')
-  }
-
-  else if (to.name === 'landing' && userStore.isRegistered) {
+  } else if (to.name === 'landing' && userStore.isRegistered) {
     next('/dashboard')
-  }
-  else {
+  } else {
     next()
   }
 })
