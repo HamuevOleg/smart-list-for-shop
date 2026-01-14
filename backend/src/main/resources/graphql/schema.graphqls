@@ -5,7 +5,7 @@ type User {
     email: String!
     username: String
     avatar: String
-    subscription: String # "FREE", "PRO", "FAMILY"
+    subscription: String
 }
 
 type AuthPayload {
@@ -32,16 +32,17 @@ type ShoppingItem {
     userPrice   : Float
     completed   : Boolean!
     imageUrl    : String
-    addedBy: String
+    createdAt   : String
+    addedBy     : String
     addedByAvatar: String
-    completedBy: String
+    completedBy : String
     completedByAvatar: String
 }
 
 type ShoppingList {
     id    : ID!
     name  : String!
-    owner : String # Email владельца
+    owner : String
     items : [ShoppingItem]!
     participants: [ListParticipant]
     messages: [ChatMessage]
@@ -53,6 +54,16 @@ type ChatMessage {
     avatar: String
     text: String
     timestamp: String
+}
+
+# Новый тип для активности
+type ActivityLog {
+    id: ID!
+    user: String!      # Имя пользователя
+    action: String!    # Текст действия (added, completed...)
+    target: String!    # Объект (Milk, Family List...)
+    type: String!      # Тип иконки (add, complete, join, delete)
+    timestamp: String! # Время события
 }
 
 # --- INPUTS ---
@@ -93,21 +104,21 @@ type Query {
     allLists: [ShoppingList]!
     listById(id: ID!, user: UserInput): ShoppingList
     searchImages(query: String!): [String]!
+
+    # Новый запрос
+    recentActivity: [ActivityLog]!
 }
 
 # --- MUTATION ---
 
 type Mutation {
-    # Auth
     requestLoginCode(email: String!): Boolean!
     loginWithCode(email: String!, code: String!): AuthPayload!
     updateUserProfile(username: String!, avatar: String!): User!
-
-    # Subscription (НОВОЕ)
     updateUserSubscription(plan: String!): User!
 
-    # Lists
     createList(name: String!): ShoppingList!
+    deleteList(id: ID!): Boolean!
     addItem(listId: ID!, itemInput: AddItemInput!, user: UserInput!): ShoppingItem!
     updateItem(listId: ID!, itemId: ID!, itemInput: UpdateItemInput!): ShoppingItem!
     removeItem(listId: ID!, itemId: ID!): Boolean!

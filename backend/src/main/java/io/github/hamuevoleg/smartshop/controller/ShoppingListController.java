@@ -3,6 +3,7 @@ package io.github.hamuevoleg.smartshop.controller;
 import io.github.hamuevoleg.smartshop.domain.*;
 import io.github.hamuevoleg.smartshop.repository.ShoppingListRepository;
 import io.github.hamuevoleg.smartshop.repository.UserRepository;
+import io.github.hamuevoleg.smartshop.service.ActivityService;
 import io.github.hamuevoleg.smartshop.service.GeminiService;
 import io.github.hamuevoleg.smartshop.service.ImageSearchService;
 import org.springframework.graphql.data.method.annotation.Argument;
@@ -12,7 +13,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -21,22 +21,27 @@ import java.util.regex.Pattern;
 public class ShoppingListController {
 
     private final ShoppingListRepository repository;
-    private final UserRepository userRepository; // Добавили для проверки подписки
+    private final UserRepository userRepository;
     private final ImageSearchService imageSearchService;
     private final GeminiService geminiService;
+    private final ActivityService activityService; // <-- Добавили
 
     public ShoppingListController(ShoppingListRepository repository,
                                   UserRepository userRepository,
                                   ImageSearchService imageSearchService,
-                                  GeminiService geminiService) {
+                                  GeminiService geminiService,
+                                  ActivityService activityService) { // <-- В конструктор
         this.repository = repository;
         this.userRepository = userRepository;
         this.imageSearchService = imageSearchService;
         this.geminiService = geminiService;
+        this.activityService = activityService;
     }
 
     @QueryMapping
-    public List<ShoppingList> allLists() { return repository.findAll(); }
+    public List<ShoppingList> allLists() {
+        return repository.findAll();
+    }
 
     @QueryMapping
     public ShoppingList listById(@Argument String id, @Argument UserInput user) {
@@ -44,11 +49,18 @@ public class ShoppingListController {
                 .orElseThrow(() -> new IllegalArgumentException("List not found"));
 
         if (user != null && user.getUsername() != null) {
-            // ПРОВЕРКА ЛИМИТА УЧАСТНИКОВ (ЕСЛИ НУЖНО)
-            // Но логичнее проверять это при инвайте. Пока просто добавляем.
-
             long now = System.currentTimeMillis();
             if (list.getParticipants() != null) {
+                // Логика "joined" (если юзера не было в списке недавно)
+                boolean alreadyHere = list.getParticipants().stream()
+                        .anyMatch(p -> p.getUsername().equals(user.getUsername()));
+
+                // Простая эвристика: если список участников пуст или юзер новый, логируем вход
+                // (Чтобы не спамить логами при каждом поллинге, можно усложнить, но пока так)
+                if (!alreadyHere) {
+                    activityService.log(user, "joined", list.getName(), "join");
+                }
+
                 list.getParticipants().removeIf(p -> p.getUsername().equals(user.getUsername()));
             }
             list.getParticipants().add(new ListParticipant(
@@ -57,7 +69,13 @@ public class ShoppingListController {
                     String.valueOf(now)
             ));
             long oneHourAgo = now - (60 * 60 * 1000);
-            list.getParticipants().removeIf(p -> Long.parseLong(p.getLastSeen()) < oneHourAgo);
+            list.getParticipants().removeIf(p -> {
+                try {
+                    return Long.parseLong(p.getLastSeen()) < oneHourAgo;
+                } catch (Exception e) {
+                    return true;
+                }
+            });
             repository.save(list);
         }
         return list;
@@ -74,27 +92,44 @@ public class ShoppingListController {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // === ПРОВЕРКА ЛИМИТОВ ===
         int currentLists = repository.countByOwner(email);
         String plan = user.getSubscription() != null ? user.getSubscription() : "FREE";
 
-        int limit = 3; // FREE
+        int limit = 3;
         if ("PRO".equals(plan)) limit = 10;
         if ("FAMILY".equals(plan)) limit = 25;
 
         if (currentLists >= limit) {
             throw new RuntimeException("List limit reached for " + plan + " plan. Please upgrade.");
         }
-        // ========================
 
         ShoppingList newList = new ShoppingList();
         newList.setName(name);
-        newList.setOwner(email); // Привязываем владельца
+        newList.setOwner(email);
+
+        // Лог создания списка (собираем UserInput вручную из User)
+        UserInput ui = new UserInput();
+        ui.setUsername(user.getUsername());
+        activityService.log(ui, "created list", name, "add");
+
         return repository.save(newList);
     }
 
-    // ... Остальные методы (addItem, updateItem и т.д.) остаются без изменений ...
-    // Вставь их сюда из предыдущих версий файла, они не менялись
+    @MutationMapping
+    public Boolean deleteList(@Argument String id) {
+        String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        return repository.findById(id).map(list -> {
+            if (list.getOwner() == null || list.getOwner().equals(currentUserEmail)) {
+                repository.delete(list);
+
+                // Лог удаления. Сложно получить UserInput здесь без доп. запроса,
+                // поэтому пока пропустим или можно найти юзера по email
+                return true;
+            }
+            throw new RuntimeException("You are not the owner of this list");
+        }).orElse(false);
+    }
 
     @MutationMapping
     public ShoppingItem addItem(@Argument String listId,
@@ -108,26 +143,54 @@ public class ShoppingListController {
         newItem.setQuantity(itemInput.getQuantity());
         newItem.setUnit(itemInput.getUnit());
 
+        // === AI CATEGORY ===
         String category = itemInput.getCategory();
         if (category == null || category.trim().isEmpty()) {
-            category = geminiService.suggestCategory(itemInput.getName());
+            try {
+                category = geminiService.suggestCategory(itemInput.getName());
+            } catch (Exception e) {
+                System.out.println("AI Category failed (ignoring): " + e.getMessage());
+                category = "Other";
+            }
         }
         newItem.setCategory(category);
 
+        // === AI PRICES ===
         if (itemInput.getPriceStore1() == null && itemInput.getPriceStore2() == null) {
-            String aiResponse = geminiService.suggestPrices(itemInput.getName());
-            if (!aiResponse.isEmpty()) {
-                parseAndSetPrices(newItem, aiResponse);
+            try {
+                String aiResponse = geminiService.suggestPrices(itemInput.getName());
+                if (aiResponse != null && !aiResponse.isEmpty()) {
+                    parseAndSetPrices(newItem, aiResponse);
+                }
+            } catch (Exception e) {
+                System.out.println("AI Price failed (ignoring): " + e.getMessage());
             }
         } else {
             newItem.setPriceStore1(itemInput.getPriceStore1());
             newItem.setPriceStore2(itemInput.getPriceStore2());
         }
 
+        // === IMAGE SEARCH ===
+        try {
+            String searchQuery;
+            if (category != null && !category.equalsIgnoreCase("Other")) {
+                searchQuery = String.format("%s %s white background", category, itemInput.getName());
+            } else {
+                searchQuery = String.format("%s grocery food item white background", itemInput.getName());
+            }
+            List<String> images = imageSearchService.searchImages(searchQuery);
+            if (!images.isEmpty()) {
+                newItem.setImageUrl(images.get(0));
+            }
+        } catch (Exception e) {
+            System.err.println("Error searching image: " + e.getMessage());
+        }
+
         newItem.setDueDate(itemInput.getDueDate());
         newItem.setComment(itemInput.getComment());
         newItem.setUserPrice(itemInput.getUserPrice());
         newItem.setCompleted(false);
+        newItem.setCreatedAt(String.valueOf(System.currentTimeMillis()));
 
         if (user != null) {
             newItem.setAddedBy(user.getUsername());
@@ -136,6 +199,10 @@ public class ShoppingListController {
 
         list.getItems().add(0, newItem);
         repository.save(list);
+
+        // --> ЛОГИРОВАНИЕ <--
+        activityService.log(user, "added", newItem.getName(), "add");
+
         return newItem;
     }
 
@@ -162,8 +229,17 @@ public class ShoppingListController {
     @MutationMapping
     public Boolean removeItem(@Argument String listId, @Argument String itemId) {
         ShoppingList list = findListById(listId);
+        // Пытаемся найти имя перед удалением для лога
+        String itemName = list.getItems().stream()
+                .filter(i -> i.getId().equals(itemId)).findFirst()
+                .map(ShoppingItem::getName).orElse("Item");
+
         boolean removed = list.getItems().removeIf(item -> item.getId().equals(itemId));
-        if (removed) repository.save(list);
+        if (removed) {
+            repository.save(list);
+            // Для removeItem у нас нет UserInput в аргументах в текущей схеме,
+            // поэтому лог записать сложно, не меняя схему. Пропустим или добавим позже.
+        }
         return removed;
     }
 
@@ -186,6 +262,14 @@ public class ShoppingListController {
         }
 
         repository.save(list);
+
+        // --> ЛОГИРОВАНИЕ <--
+        if (completed) {
+            activityService.log(user, "bought", item.getName(), "complete");
+        } else {
+            activityService.log(user, "uncheck", item.getName(), "delete"); // или другой тип
+        }
+
         return item;
     }
 

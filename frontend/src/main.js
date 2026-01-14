@@ -1,13 +1,16 @@
-import './assets/main.css'
-
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
+import { DefaultApolloClient } from '@vue/apollo-composable'
 import App from './App.vue'
-import router from './router' // <--- Импортируем роутер
+import router from './router'
+import { apolloClient } from './apollo' // <-- Импортируем наш клиент
 
 const app = createApp(App)
-const pinia = createPinia()
 
-app.use(pinia)
-app.use(router) // <--- Подключаем роутер
+// ВАЖНО: Подключаем Apollo Client ПЕРЕД app.mount()
+app.provide(DefaultApolloClient, apolloClient)
+
+app.use(createPinia())
+app.use(router)
+
 app.mount('#app')

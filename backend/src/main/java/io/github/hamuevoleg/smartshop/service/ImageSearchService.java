@@ -27,25 +27,33 @@ public class ImageSearchService {
     }
 
     public List<String> searchImages(String query) {
-        // Выполняем асинхронный HTTP-запрос
-        GoogleSearchResponse response = webClient.get()
-                .uri(uriBuilder -> uriBuilder
-                        .queryParam("key", apiKey)
-                        .queryParam("cx", cx)
-                        .queryParam("q", query)
-                        .queryParam("searchType", "image")
-                        .queryParam("num", 5)
-                        .build())
-                .retrieve()
-                .bodyToMono(GoogleSearchResponse.class)
-                .block();
+        try {
+            // Выполняем асинхронный HTTP-запрос
+            GoogleSearchResponse response = webClient.get()
+                    .uri(uriBuilder -> uriBuilder
+                            .queryParam("key", apiKey)
+                            .queryParam("cx", cx)
+                            .queryParam("q", query)
+                            .queryParam("searchType", "image")
+                            .queryParam("num", 5) // Берем 5 картинок
+                            .build())
+                    .retrieve()
+                    .bodyToMono(GoogleSearchResponse.class)
+                    .block();
 
-        if (response == null || response.getItems() == null) {
+            if (response == null || response.getItems() == null) {
+                return Collections.emptyList();
+            }
+
+            return response.getItems().stream()
+                    .map(item -> item.getLink())
+                    .collect(Collectors.toList());
+
+        } catch (Exception e) {
+            // Логируем ошибку, но не роняем приложение
+            System.err.println("Google Image Search Error: " + e.getMessage());
+            // Можно раскомментировать для полной отладки: e.printStackTrace();
             return Collections.emptyList();
         }
-
-        return response.getItems().stream()
-                .map(item -> item.getLink())
-                .collect(Collectors.toList());
     }
 }

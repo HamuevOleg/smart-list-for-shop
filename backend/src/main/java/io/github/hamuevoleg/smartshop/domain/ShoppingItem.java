@@ -19,6 +19,9 @@ public class ShoppingItem {
     private boolean completed = false;
     private String imageUrl;
 
+    // Новое поле для графиков
+    private String createdAt;
+
     private String addedBy;
     private String addedByAvatar;
     private String completedBy;

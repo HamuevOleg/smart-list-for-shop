@@ -1,73 +1,83 @@
 @import url('https://fonts.googleapis.com/css2?family=Kumbh+Sans:wght@100..900&display=swap');
 
 :root {
-  --bg-color: #ffffff;          /* Остается */
-  --card-color: #1a0f1f;
-  --secondary-color: #ff3366;
-  --list-item-color: #2e1a3d;
-  --bg-surface-hover: #3d244d;
-  --bg-input: #1a0f28;
+  /* --- ВЕРНУЛ ТЕМНУЮ ТЕМУ --- */
+  --bg-color: #060010;          /* Глубокий темный фон */
+  --card-color: rgba(30, 30, 46, 0.7); /* Полупрозрачный фон для карточек */
 
-  --primary-color: #ff3366;     /* Неон-красный */
+  --primary-color: #ff3366;     /* Неоновый розовый */
   --primary-hover: #ff5577;
+  --secondary-color: #60a5fa;   /* Неоновый синий */
 
-  --text-color: #ff3366;
-  --text-light: #c0a0d0;
+  --text-color: #ffffff;        /* Белый текст */
+  --text-light: #9ca3af;        /* Светло-серый текст */
 
-  --border-color: #5a2f6a;
+  --bg-input: rgba(255, 255, 255, 0.05); /* Фон инпутов */
+  --bg-surface-hover: rgba(255, 255, 255, 0.1);
+  --list-item-color: rgba(30, 30, 46, 0.6);
 
-  --border-radius: 10px;
-  --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --border-color: rgba(255, 255, 255, 0.1);
+  --border-radius: 16px;
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
 body {
   font-family: "Kumbh Sans", sans-serif;
-
-  background-color: #060010;
+  background-color: var(--bg-color);
   color: var(--text-color);
   margin: 0;
   line-height: 1.6;
   min-height: 100vh;
+  overflow-x: hidden; /* Скрываем горизонтальный скролл */
 }
 
+/* Базовые стили кнопок, чтобы они везде выглядели одинаково */
 .btn {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: none;
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 0.75em 1.5em;
-  font-size: 0.9rem;
-  font-weight: 600;
+  font-size: 0.95rem;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
 }
+
 .btn-primary {
-  background-color: var(--primary-color);
+  background: linear-gradient(135deg, var(--primary-color), #e91e63);
   color: white;
+  box-shadow: 0 4px 15px rgba(255, 51, 102, 0.3);
 }
 .btn-primary:hover {
-  background-color: var(--primary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 51, 102, 0.5);
 }
+
 .btn-secondary {
-  background-color: var(--card-color);
-  color: var(--text-color);
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
   border: 1px solid var(--border-color);
 }
 .btn-secondary:hover {
-  background-color: #f8fafc;
+  background: rgba(255, 255, 255, 0.15);
 }
+
 .form-input {
   width: 100%;
-  padding: 0.75em;
+  padding: 0.8em;
   border: 1px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: 12px;
   font-size: 1rem;
-  box-sizing: border-box; /* Важно для padding */
-  background-color: #f8fafc;
-  color: var(--text-color);
+  box-sizing: border-box;
+  background-color: var(--bg-input);
+  color: #fff;
+  outline: none;
+  transition: border-color 0.2s;
 }
 .form-input:focus {
-  outline: 2px solid var(--primary-color);
-  border-color: transparent;
-  background-color: #fff;
+  border-color: var(--primary-color);
+  background-color: rgba(0, 0, 0, 0.3);
 }

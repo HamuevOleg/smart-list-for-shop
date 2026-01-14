@@ -22,8 +22,6 @@ export const useListStore = defineStore('list', () => {
   const isTotalsModalOpen = ref(false)
   const isChatOpen = ref(false)
   const isHelpSidebarOpen = ref(true)
-
-  // New State for "Best Shops" tab
   const isBestShopsOpen = ref(false)
 
   // === GETTERS ===
@@ -33,7 +31,6 @@ export const useListStore = defineStore('list', () => {
 
   const groupedItems = computed(() => {
     if (!activeList.value) return {}
-    // Сортировка: сначала невыполненные
     const sorted = [...activeList.value.items].sort((a, b) => a.completed - b.completed)
     return sorted.reduce((acc, item) => {
       const category = item.category || 'Uncategorized'
@@ -48,25 +45,15 @@ export const useListStore = defineStore('list', () => {
 
     let total1 = 0
     let total2 = 0
-    let totalUser = 0 // Сумма товаров, где есть только "моя цена" или она приоритетна (опционально)
-
-    // В текущей логике считаем просто сумму Metro vs Linella для некупленных товаров
-    // Если есть userPrice, можно использовать его как "итоговую" для пользователя,
-    // но для сравнения магазинов берем их цены.
 
     for (const item of activeList.value.items) {
       if (item.completed) continue
-
       const p1 = Number(item.priceStore1) || 0
       const p2 = Number(item.priceStore2) || 0
       const pUser = Number(item.userPrice) || 0
 
-      // Простая логика: суммируем цены магазинов, если они есть
       if (p1 > 0) total1 += p1
       if (p2 > 0) total2 += p2
-
-      // Если цены магазина нет, но есть userPrice, можно добавить её к обоим,
-      // чтобы "дырки" не искажали общую картину (опционально)
       if (p1 === 0 && pUser > 0) total1 += pUser
       if (p2 === 0 && pUser > 0) total2 += pUser
     }
@@ -81,7 +68,6 @@ export const useListStore = defineStore('list', () => {
   // === ACTIONS (DB & API) ===
 
   const saveListsToDb = async () => {
-    // Сохраняем в локальную БД (Dexie)
     const plainLists = JSON.parse(JSON.stringify(lists.value))
     await db.lists.bulkPut(plainLists)
   }
@@ -89,7 +75,6 @@ export const useListStore = defineStore('list', () => {
   const fetchLists = async () => {
     isLoading.value = true
 
-    // 1. Грузим из локальной БД
     const localLists = await db.lists.toArray()
     if (localLists.length > 0) {
       lists.value = localLists
@@ -100,13 +85,14 @@ export const useListStore = defineStore('list', () => {
       return
     }
 
-    // 2. Грузим с сервера
+    // --- ВАЖНО: Добавлено createdAt в запрос ---
     const query = `
       query {
         allLists {
-          id name
+          id name owner
           items {
-            id name quantity unit category dueDate comment priceStore1 priceStore2 userPrice completed imageUrl
+            id name quantity unit category dueDate comment
+            priceStore1 priceStore2 userPrice completed imageUrl createdAt
             addedBy addedByAvatar completedBy completedByAvatar
           }
         }
@@ -128,7 +114,6 @@ export const useListStore = defineStore('list', () => {
   const fetchListById = async (id, { background = false } = {}) => {
     if (!background) isLoading.value = true
 
-    // Сначала из кэша
     const localList = await db.lists.get(id)
     if (localList) {
       const existingIndex = lists.value.findIndex(l => l.id === id)
@@ -146,12 +131,14 @@ export const useListStore = defineStore('list', () => {
     }
 
     const userStore = useUserStore()
+    // --- ВАЖНО: Добавлено createdAt в запрос ---
     const query = `
       query($id: ID!, $user: UserInput) {
         listById(id: $id, user: $user) {
-          id name
+          id name owner
           items {
-            id name quantity unit category dueDate comment priceStore1 priceStore2 userPrice completed imageUrl
+            id name quantity unit category dueDate comment
+            priceStore1 priceStore2 userPrice completed imageUrl createdAt
             addedBy addedByAvatar completedBy completedByAvatar
           }
           participants { username avatar lastSeen }
@@ -169,13 +156,9 @@ export const useListStore = defineStore('list', () => {
       if (data.listById) {
         const index = lists.value.findIndex(l => l.id === data.listById.id)
         if (index !== -1) {
-          // Сохраняем локальные pending элементы при обновлении
           const pendingItems = lists.value[index].items.filter(i => i.syncStatus === 'pending')
           const serverItems = data.listById.items
-
-          // Объединяем, чтобы не потерять то, что только что добавили офлайн
           data.listById.items = [...pendingItems, ...serverItems]
-
           lists.value[index] = data.listById
         } else {
           lists.value.push(data.listById)
@@ -203,6 +186,33 @@ export const useListStore = defineStore('list', () => {
       await saveListsToDb()
     } catch (e) {
       console.error(e)
+      throw e
+    }
+  }
+
+  const deleteList = async (id) => {
+    if (!navigator.onLine) {
+      alert('You need internet connection to delete a list.')
+      return
+    }
+
+    const query = `mutation($id: ID!) { deleteList(id: $id) }`
+
+    try {
+      const data = await gplClient(query, { id })
+
+      if (data.deleteList) {
+        lists.value = lists.value.filter(l => l.id !== id)
+        await db.lists.delete(id)
+        if (activeListId.value === id) {
+          activeListId.value = null
+        }
+      } else {
+        throw new Error("Failed to delete list (Server returned false)")
+      }
+    } catch (e) {
+      console.error("Delete List Error:", e)
+      throw e
     }
   }
 
@@ -210,25 +220,24 @@ export const useListStore = defineStore('list', () => {
     if (!activeList.value) return
     const userStore = useUserStore()
 
-    // Optimistic Update
     const tempId = uuidv4()
     const listId = activeList.value.id
 
     const newItem = {
       ...item,
       id: tempId,
-      syncStatus: 'pending', // Маркер для UI
+      syncStatus: 'pending',
       completed: false,
       addedBy: userStore.user.username,
-      addedByAvatar: userStore.user.avatar
+      addedByAvatar: userStore.user.avatar,
+      // ВАЖНО: Добавляем дату локально, чтобы график обновился мгновенно
+      createdAt: String(Date.now())
     }
 
-    // Добавляем в начало списка
     activeList.value.items.unshift(newItem)
     isAddItemFormVisible.value = false
     await saveListsToDb()
 
-    // Задача для синхронизации
     const syncTask = {
       type: 'ADD_ITEM',
       listId: listId,
@@ -247,10 +256,12 @@ export const useListStore = defineStore('list', () => {
   const processSyncItem = async (task) => {
     try {
       if (task.type === 'ADD_ITEM') {
+        // --- ВАЖНО: Добавлено createdAt в ответ мутации ---
         const query = `
           mutation($listId: ID!, $itemInput: AddItemInput!, $user: UserInput!) {
             addItem(listId: $listId, itemInput: $itemInput, user: $user) {
-              id name quantity unit category dueDate comment priceStore1 priceStore2 userPrice completed imageUrl
+              id name quantity unit category dueDate comment
+              priceStore1 priceStore2 userPrice completed imageUrl createdAt
               addedBy addedByAvatar completedBy completedByAvatar
             }
           }
@@ -261,7 +272,6 @@ export const useListStore = defineStore('list', () => {
           user: task.user
         })
 
-        // Заменяем временный ID на настоящий
         const list = lists.value.find(l => l.id === task.listId)
         if (list) {
           const index = list.items.findIndex(i => i.id === task.tempId)
@@ -291,12 +301,10 @@ export const useListStore = defineStore('list', () => {
         await gplClient(query, { listId: task.listId, itemId: task.itemId })
       }
 
-      // Если успешно - удаляем из очереди
       if (task.id) await db.syncQueue.delete(task.id)
 
     } catch (e) {
       console.error('Sync failed for task', task, e)
-      // Если это не временная ошибка сети, возможно, стоит удалить задачу или пометить как failed
       if (!task.id) await db.syncQueue.add(task)
     }
   }
@@ -306,7 +314,6 @@ export const useListStore = defineStore('list', () => {
     const tasks = await db.syncQueue.toArray()
     if (tasks.length === 0) return
 
-    console.log(`Syncing ${tasks.length} offline actions...`)
     for (const task of tasks) {
       await processSyncItem(task)
     }
@@ -319,7 +326,6 @@ export const useListStore = defineStore('list', () => {
     const item = activeList.value.items.find(i => i.id === itemId)
     if (!item) return
 
-    // Optimistic
     item.completed = !item.completed
     await saveListsToDb()
 
@@ -338,8 +344,6 @@ export const useListStore = defineStore('list', () => {
   const removeItem = async (itemId) => {
     if (!activeList.value) return
 
-    // Для безопасности пока требуем онлайн для удаления,
-    // но можно реализовать и офлайн удаление через очередь
     if (!navigator.onLine) {
       alert("Delete requires internet for now (Safety reasons)")
       return
@@ -349,7 +353,6 @@ export const useListStore = defineStore('list', () => {
     const index = activeList.value.items.findIndex((i) => i.id === itemId)
     if (index === -1) return
 
-    // Optimistic
     activeList.value.items.splice(index, 1)
     await saveListsToDb()
 
@@ -361,7 +364,6 @@ export const useListStore = defineStore('list', () => {
     if (!navigator.onLine || !activeList.value) return
     const userStore = useUserStore()
 
-    // Тут можно добавить Optimistic Message, но пока отправляем сразу
     const query = `
       mutation($listId: ID!, $text: String!, $user: UserInput!) {
         sendMessage(listId: $listId, text: $text, user: $user) {
@@ -388,7 +390,7 @@ export const useListStore = defineStore('list', () => {
   // === UI ACTIONS ===
   const selectList = (id) => {
     activeListId.value = id
-    isBestShopsOpen.value = false // Сбрасываем вкладку магазинов
+    isBestShopsOpen.value = false
   }
   const backToListSelector = () => {
     activeListId.value = null
@@ -418,29 +420,31 @@ export const useListStore = defineStore('list', () => {
 
   const saveEdit = async () => {
     if (!editingItem.value) return
-    // Простая реализация: обновление через API и локально
-    // В продакшене добавить валидацию и офлайн-очередь
     alert("Edit works only online for now (Impl needed)")
   }
 
   // === RETURN EVERYTHING ===
   return {
-    // State
     lists, activeListId, isLoading, isAddingItem, isOnline,
     isShareModalOpen, editingItem, viewingItem,
     isAddItemFormVisible, isTotalsSidebarOpen, isTotalsModalOpen, isChatOpen,
     isHelpSidebarOpen, isBestShopsOpen,
 
-    // Getters
     activeList, groupedItems, totals,
 
-    // Actions DB/API
-    fetchLists, fetchListById, createList, addItem, removeItem, toggleItem,
-    syncPendingActions, sendMessage, saveEdit,
+    fetchLists,
+    fetchListById,
+    createList,
+    deleteList,
+    addItem,
+    removeItem,
+    toggleItem,
+    syncPendingActions,
+    sendMessage,
+    saveEdit,
 
-    // Actions UI
     selectList, backToListSelector,
-    openBestShops, closeBestShops, // <--- Важно для BestShops
+    openBestShops, closeBestShops,
     startViewing, cancelViewing, startEditing, cancelEdit,
     showAddItemForm, hideAddItemForm,
     toggleTotalsSidebar, closeTotalsSidebar, toggleTotalsModal,
