@@ -8,15 +8,8 @@
           :class="{ active: viewMode === 'grouped' }"
           @click="viewMode = 'grouped'"
         >
-          <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="8" y1="6" x2="21" y2="6"></line>
-            <line x1="8" y1="12" x2="21" y2="12"></line>
-            <line x1="8" y1="18" x2="21" y2="18"></line>
-            <line x1="3" y1="6" x2="3.01" y2="6"></line>
-            <line x1="3" y1="12" x2="3.01" y2="12"></line>
-            <line x1="3" y1="18" x2="3.01" y2="18"></line>
-          </svg>
-          <span>By Category</span>
+          <span class="icon">📂</span>
+          <span>Categories</span>
         </button>
 
         <button
@@ -24,12 +17,7 @@
           :class="{ active: viewMode === 'linear' }"
           @click="viewMode = 'linear'"
         >
-          <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="3" width="7" height="7"></rect>
-            <rect x="14" y="3" width="7" height="7"></rect>
-            <rect x="14" y="14" width="7" height="7"></rect>
-            <rect x="3" y="14" width="7" height="7"></rect>
-          </svg>
+          <span class="icon">📋</span>
           <span>All Items</span>
         </button>
       </div>
@@ -39,20 +27,22 @@
       v-if="!store.activeList || store.activeList.items.length === 0"
       class="empty-list"
     >
-      <p>📝</p>
-      Your list is currently empty. Add your first item!
+      <div class="empty-icon">📝</div>
+      <h3>Your list is empty</h3>
+      <p>Tap "Add New Item" to get started!</p>
     </div>
 
     <Transition name="mode-switch" mode="out-in">
-
       <div v-if="viewMode === 'grouped'" key="grouped" class="list-view">
         <div
           v-for="(group, category) in store.groupedItems"
           :key="category"
           class="category-group"
         >
-          <h3 class="category-title">{{ category }}</h3>
-          <div class="items-wrapper">
+          <h3 class="category-title">
+            <span class="cat-marker">#</span> {{ category }}
+          </h3>
+          <div class="items-grid">
             <TransitionGroup name="list-anim">
               <ShoppingListItem
                 v-for="item in group"
@@ -65,7 +55,7 @@
       </div>
 
       <div v-else key="linear" class="list-view">
-        <div class="items-wrapper linear-view">
+        <div class="items-grid">
           <TransitionGroup name="list-anim">
             <ShoppingListItem
               v-for="item in sortedFlatItems"
@@ -75,7 +65,6 @@
           </TransitionGroup>
         </div>
       </div>
-
     </Transition>
 
   </section>
@@ -89,14 +78,12 @@ import ShoppingListItem from './ShoppingListItem.vue'
 const store = useListStore()
 const viewMode = ref('grouped')
 
-// Сортировка: сначала некупленные, потом купленные
 const sortedFlatItems = computed(() => {
   if (!store.activeList?.items) return []
   return [...store.activeList.items].sort((a, b) => Number(a.completed) - Number(b.completed))
 })
 
 let pollingInterval = null
-
 onMounted(() => {
   pollingInterval = setInterval(() => {
     if (store.activeListId && !store.editingItem && !store.isAddingItem) {
@@ -112,166 +99,56 @@ onUnmounted(() => {
 
 <style scoped>
 .shopping-list-container {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
+  display: flex; flex-direction: column; gap: 2rem;
+  padding-bottom: 100px; /* Отступ чтобы список не ушел под кнопку Totals */
 }
 
-/* === ПЕРЕКЛЮЧАТЕЛЬ (НОВЫЙ СТИЛЬ "POPOUT") === */
+/* КОНТРОЛЫ */
 .list-controls {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 0.5rem;
-  animation: fadeIn 0.5s ease;
-  position: sticky;
-  top: 10px;
-  z-index: 40;
+  display: flex; justify-content: flex-end;
+  position: sticky; top: 1rem; z-index: 40;
 }
 
 .view-toggles {
-  display: flex;
-  /* Более темный фон контейнера для контраста */
-  background: rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(10px);
-  padding: 5px;
-  border-radius: 16px; /* Закругленные углы контейнера */
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  gap: 5px; /* Отступ между кнопками */
+  display: inline-flex; background: rgba(30, 30, 46, 0.8); backdrop-filter: blur(12px);
+  padding: 4px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
 .toggle-btn {
-  position: relative;
-  z-index: 1;
-  background: transparent; /* Неактивная кнопка прозрачная */
-  border: none;
-  color: rgba(255, 255, 255, 0.6); /* Цвет неактивного текста */
-  padding: 10px 18px;
-  border-radius: 12px; /* Закругленные углы кнопок */
-  cursor: pointer;
-  font-size: 0.9rem;
-  font-weight: 600;
-  /* Плавный переход всех свойств для эффекта "выпрыгивания" */
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  flex: 1;
-  white-space: nowrap;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
+  display: flex; align-items: center; gap: 8px; padding: 8px 16px;
+  border: none; border-radius: 10px; background: transparent;
+  color: #94a3b8; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: all 0.2s ease;
 }
+.toggle-btn:hover { color: #fff; }
+.toggle-btn.active { background: var(--primary-color); color: white; box-shadow: 0 2px 10px rgba(255, 51, 102, 0.4); }
 
-/* СТИЛЬ АКТИВНОЙ КНОПКИ - БОЛЬШЕ И ЯРЧЕ */
-.toggle-btn.active {
-  background: var(--primary-color); /* Розовый фон */
-  color: #fff; /* Белый текст */
-  /* Увеличение размера */
-  transform: scale(1.05);
-  z-index: 2; /* Поверх неактивной */
-  /* Яркая тень для объема */
-  box-shadow: 0 4px 15px rgba(255, 51, 102, 0.5), 0 2px 5px rgba(0,0,0,0.2);
-}
-
-.icon {
-  opacity: 0.7;
-  transition: opacity 0.3s ease;
-}
-.toggle-btn.active .icon {
-  opacity: 1;
-}
-
-/* === СПИСКИ === */
+/* ПУСТОЙ СПИСОК */
 .empty-list {
-  text-align: center;
-  padding: 3rem;
-  background: var(--card-color);
-  border-radius: var(--border-radius);
-  color: var(--text-light);
-  font-size: 1.1rem;
+  text-align: center; padding: 4rem 2rem; background: rgba(255, 255, 255, 0.03);
+  border: 2px dashed rgba(255, 255, 255, 0.1); border-radius: 20px; color: var(--text-light);
 }
-.empty-list p { font-size: 3rem; margin: 0; }
+.empty-icon { font-size: 3rem; margin-bottom: 1rem; opacity: 0.5; }
+.empty-list h3 { color: #fff; margin: 0 0 0.5rem 0; }
 
-.category-group { width: 100%; margin-bottom: 1.5rem; }
-
+/* ГРУППЫ И СЕТКА */
+.category-group { margin-bottom: 2rem; }
 .category-title {
-  font-size: 1.1rem;
-  color: var(--secondary-color);
-  margin-bottom: 0.8rem;
-  padding-bottom: 0.3rem;
-  border-bottom: 2px solid rgba(255, 51, 102, 0.2);
-  display: inline-block;
+  font-size: 1.1rem; color: var(--secondary-color); margin-bottom: 1rem;
+  display: flex; align-items: center; gap: 0.5rem; padding-left: 0.5rem;
 }
+.cat-marker { color: rgba(255, 255, 255, 0.2); font-weight: 400; }
+.items-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; }
 
-.items-wrapper {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 1rem;
-}
+/* АНИМАЦИИ */
+.list-anim-move, .list-anim-enter-active, .list-anim-leave-active { transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); }
+.list-anim-enter-from, .list-anim-leave-to { opacity: 0; transform: scale(0.95) translateY(10px); }
+.list-anim-leave-active { position: absolute; }
+.mode-switch-enter-active, .mode-switch-leave-active { transition: opacity 0.2s ease; }
+.mode-switch-enter-from, .mode-switch-leave-to { opacity: 0; }
 
-/* === АНИМАЦИИ СПИСКА === */
-.list-anim-move,
-.list-anim-enter-active,
-.list-anim-leave-active {
-  transition: all 0.4s cubic-bezier(0.55, 0, 0.1, 1);
-}
-.list-anim-enter-from,
-.list-anim-leave-to {
-  opacity: 0;
-  transform: scale(0.95) translateY(10px);
-}
-.list-anim-leave-active {
-  position: absolute;
-}
-
-.mode-switch-enter-active,
-.mode-switch-leave-active {
-  transition: opacity 0.3s ease, transform 0.3s ease;
-}
-.mode-switch-enter-from {
-  opacity: 0;
-  transform: translateY(10px);
-}
-.mode-switch-leave-to {
-  opacity: 0;
-  transform: translateY(-10px);
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* === МОБИЛЬНАЯ АДАПТАЦИЯ === */
 @media (max-width: 600px) {
-  .list-controls {
-    justify-content: center;
-    width: 100%;
-    margin-bottom: 1rem;
-  }
-
-  .view-toggles {
-    width: 100%;
-    max-width: 350px;
-    /* На мобилке кнопки чуть меньше, чтобы влезли */
-    padding: 4px;
-    gap: 4px;
-  }
-
-  .toggle-btn {
-    padding: 10px 0;
-    font-size: 0.85rem;
-  }
-
-  /* На мобилке увеличение чуть меньше, чтобы не ломать верстку */
-  .toggle-btn.active {
-    transform: scale(1.03);
-  }
-
-  .items-wrapper {
-    grid-template-columns: 1fr;
-  }
-
-  .shopping-list-container {
-    padding-bottom: 80px;
-  }
+  .list-controls { justify-content: center; top: 5px; }
+  .items-grid { grid-template-columns: 1fr; }
 }
 </style>

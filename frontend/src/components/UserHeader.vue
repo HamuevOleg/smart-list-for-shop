@@ -1,67 +1,54 @@
 <template>
-  <header class="user-header">
+  <header class="user-header glass-panel">
+
     <div class="header-top">
-      <div class="user-info">
-        <div class="avatar-wrapper">
+
+      <div class="user-block" @click="userStore.openProfileEdit">
+        <div class="avatar-ring">
           <img
             :src="userStore.user.avatar || '/default_avatar.png'"
-            alt="pfp"
+            alt="User"
             class="avatar-img"
           />
         </div>
-
-        <div class="user-text">
+        <div class="user-info">
           <div class="name-row">
             <span class="username">{{ userStore.user.username }}</span>
-            <button class="btn-edit" @click="userStore.openProfileEdit">✎</button>
           </div>
-          <button @click="handleLogout" class="btn-logout">
-            Change user ↺
-          </button>
+          <button class="link-edit">Edit Profile</button>
         </div>
       </div>
 
-      <h2 class="list-title">
-        {{ store.isBestShopsOpen ? '🇲🇩 Guide' : store.activeList?.name }}
-      </h2>
-
-      <button
-        class="mobile-total-indicator"
-        @click="store.toggleTotalsModal"
-        v-if="!store.isBestShopsOpen"
-      >
-        💰 {{ cheapestTotal }}
-      </button>
+      <div class="title-block">
+        <h2 class="list-title">
+          {{ store.isBestShopsOpen ? '🇲🇩 Guide' : store.activeList?.name }}
+        </h2>
+      </div>
 
       <div class="header-actions">
-        <button class="btn btn-secondary action-btn" @click="store.toggleChat">
-          <span class="desktop-text">Chat 💬</span>
-          <span class="mobile-icon">💬</span>
+        <button class="btn-icon-glass" @click="store.toggleChat" title="Chat">
+          💬
         </button>
-
-        <button class="btn btn-primary action-btn" @click="store.isShareModalOpen = true">
-          <span class="desktop-text">Share 🔗</span>
-          <span class="mobile-icon">🔗</span>
+        <button class="btn-icon-glass" @click="store.isShareModalOpen = true" title="Share">
+          🔗
+        </button>
+        <button class="btn-icon-glass logout" @click="handleLogout" title="Logout">
+          🚪
         </button>
       </div>
     </div>
 
     <div class="participants-bar" v-if="otherParticipants.length > 0 && !store.isBestShopsOpen">
-      <span class="label">Also here:</span>
-      <div class="participants-list">
+      <span class="bar-label">Online:</span>
+      <div class="avatars-stack">
         <div
           v-for="p in otherParticipants"
           :key="p.username"
-          class="participant"
-          :title="p.username + ' (' + getStatusText(p.lastSeen) + ')'"
+          class="stack-item"
+          :class="getStatusClass(p.lastSeen)"
+          :title="`${p.username} (${getStatusText(p.lastSeen)})`"
         >
-          <div class="p-avatar-wrapper">
-            <img
-              :src="p.avatar || '/default_avatar.png'"
-              class="p-avatar-img"
-            />
-            <span class="status-dot" :class="getStatusClass(p.lastSeen)"></span>
-          </div>
+          <img :src="p.avatar || '/default_avatar.png'" />
         </div>
       </div>
     </div>
@@ -73,6 +60,7 @@
         @click.prevent="store.closeBestShops"
       >
         Items
+        <div class="active-dot"></div>
       </a>
 
       <a
@@ -81,14 +69,15 @@
         @click.prevent="store.openBestShops"
       >
         Best Shops
+        <div class="active-dot"></div>
       </a>
 
-      <a class="nav-tab disabled" href="#">
-        Receipts (soon)
+      <a class="nav-tab disabled">
+        Receipts <span class="badge-soon">Soon</span>
       </a>
 
-      <a class="nav-tab back-link" @click.prevent="store.backToListSelector">
-        ← Lists
+      <a class="nav-link-back" @click.prevent="store.backToListSelector">
+        ← All Lists
       </a>
     </nav>
   </header>
@@ -103,7 +92,7 @@ const store = useListStore()
 const userStore = useUserStore()
 
 const handleLogout = () => {
-  if (confirm('Are you sure you want to log out?')) {
+  if (confirm('Log out from SmartList?')) {
     userStore.logout()
   }
 }
@@ -115,169 +104,121 @@ const otherParticipants = computed(() => {
 
 const getStatusClass = (lastSeenStr) => {
   const diff = Date.now() - Number(lastSeenStr)
-  if (diff < 20000) return 'online'
-  if (diff < 60000) return 'away'
-  return 'offline'
+  if (diff < 20000) return 'status-online'
+  if (diff < 60000) return 'status-away'
+  return 'status-offline'
 }
 
 const getStatusText = (lastSeenStr) => {
   const diff = Date.now() - Number(lastSeenStr)
-  if (diff < 20000) return 'Online now'
+  if (diff < 20000) return 'Online'
   const mins = Math.floor(diff / 60000)
-  if (mins < 1) return 'Just seen'
-  return `${mins}m ago`
+  return mins < 1 ? 'Just seen' : `${mins}m ago`
 }
-
-const cheapestTotal = computed(() => {
-  const total1 = parseFloat(store.totals.store1)
-  const total2 = parseFloat(store.totals.store2)
-
-  if (total1 > 0 && total2 > 0) {
-    return Math.min(total1, total2).toFixed(2)
-  }
-  return (total1 || total2).toFixed(2)
-})
 </script>
 
 <style scoped>
+/* Glass Container */
 .user-header {
-  padding: 1rem;
-  background-color: var(--card-color);
-  border-radius: var(--border-radius);
-  box-shadow: var(--shadow);
   margin-bottom: 2rem;
-}
-.header-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-.user-info {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-.user-text {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  line-height: 1.2;
-}
-
-.name-row {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.btn-edit {
-  background: none; border: none; color: var(--text-light);
-  font-size: 1rem; cursor: pointer; padding: 2px;
-  transition: color 0.2s;
-}
-.btn-edit:hover { color: var(--primary-color); }
-
-.btn-logout {
-  background: none;
-  border: none;
-  color: var(--text-light);
-  font-size: 0.75rem;
-  cursor: pointer;
-  padding: 0;
-  opacity: 0.7;
-  text-decoration: underline;
-}
-.btn-logout:hover { opacity: 1; color: var(--primary-color); }
-
-.avatar-wrapper {
-  width: 45px; height: 45px;
-  border-radius: 50%;
-  border: 2px solid var(--primary-color);
+  padding: 1.5rem 1.5rem 0 1.5rem;
+  border-radius: 28px;
+  background: rgba(20, 20, 35, 0.6);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+  position: relative;
   overflow: hidden;
-  background: var(--bg-input);
-}
-.avatar-img {
-  width: 100%; height: 100%; object-fit: cover;
 }
 
-.username { font-weight: 700; font-size: 1.1rem; color: #fff; }
+/* Top Row */
+.header-top { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+
+/* User Block */
+.user-block { display: flex; align-items: center; gap: 12px; cursor: pointer; transition: opacity 0.2s; }
+.user-block:hover { opacity: 0.8; }
+.avatar-ring {
+  width: 48px; height: 48px; padding: 2px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+}
+.avatar-img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 2px solid #1a1a24; background: #000; }
+.user-info { display: flex; flex-direction: column; }
+.username { font-weight: 700; font-size: 1.1rem; color: #fff; line-height: 1.2; }
+.link-edit { background: none; border: none; padding: 0; color: var(--text-light); font-size: 0.75rem; text-align: left; cursor: pointer; }
+.link-edit:hover { color: var(--primary-color); }
+
+/* Title */
+.title-block { text-align: center; }
 .list-title {
-  font-size: 1.25rem;
-  color: var(--secondary-color);
-  margin: 0;
-  text-align: center;
+  margin: 0; font-size: 1.5rem; font-weight: 800;
+  background: linear-gradient(135deg, #fff 30%, var(--secondary-color) 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 30px rgba(96, 165, 250, 0.3);
 }
 
-.mobile-total-indicator {
-  display: none;
-  background: rgba(255, 51, 102, 0.15);
-  border: 1px solid var(--primary-color);
-  border-radius: 12px;
-  padding: 0.5rem 1rem;
-  color: var(--primary-color);
-  font-weight: 700;
-  font-size: 1rem;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all 0.3s ease;
+/* Actions */
+.header-actions { display: flex; gap: 8px; }
+.btn-icon-glass {
+  width: 42px; height: 42px; border-radius: 14px;
+  background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff; font-size: 1.2rem; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.2s;
 }
+.btn-icon-glass:hover { background: rgba(255, 255, 255, 0.15); transform: translateY(-2px); }
+.logout:hover { background: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.4); }
 
-.mobile-total-indicator:hover {
-  background: rgba(255, 51, 102, 0.25);
-  transform: scale(1.05);
-}
-
-.header-actions { display: flex; gap: 0.5rem; }
-.action-btn { display: flex; align-items: center; justify-content: center; padding: 0.5rem 1rem; transition: all 0.2s ease; }
-.desktop-text { display: inline; }
-.mobile-icon { display: none; }
-
+/* Participants */
 .participants-bar {
-  display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;
-  padding: 0.5rem 0.75rem; background: rgba(255, 255, 255, 0.03);
-  border-radius: 12px; border: 1px solid var(--border-color);
+  display: flex; align-items: center; gap: 12px; margin-bottom: 1.5rem;
+  background: rgba(0, 0, 0, 0.2); padding: 8px 16px; border-radius: 16px; width: fit-content;
 }
-.label { font-size: 0.8rem; color: var(--text-light); font-weight: 600; white-space: nowrap; }
-.participants-list { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-.participant { position: relative; transition: transform 0.2s; cursor: help; }
-.participant:hover { transform: translateY(-2px); }
-
-.p-avatar-wrapper { position: relative; width: 32px; height: 32px; }
-.p-avatar-img {
-  width: 100%; height: 100%; border-radius: 50%;
-  border: 2px solid var(--card-color);
-  background: var(--bg-input); object-fit: cover;
+.bar-label { font-size: 0.75rem; color: var(--text-light); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+.avatars-stack { display: flex; align-items: center; }
+.stack-item {
+  width: 32px; height: 32px; border-radius: 50%;
+  border: 2px solid #2a2a35; margin-left: -10px;
+  position: relative; transition: all 0.2s; cursor: help;
 }
-
-.status-dot {
-  position: absolute; bottom: -2px; right: -2px;
-  width: 10px; height: 10px; border-radius: 50%;
-  border: 2px solid var(--card-color); background-color: #94a3b8;
+.stack-item:first-child { margin-left: 0; }
+.stack-item:hover { transform: translateY(-4px) scale(1.1); z-index: 10; border-color: #fff; }
+.stack-item img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+.stack-item::after {
+  content: ''; position: absolute; bottom: 0; right: 0; width: 8px; height: 8px;
+  border-radius: 50%; border: 1.5px solid #2a2a35;
 }
-.status-dot.online { background-color: #10b981; box-shadow: 0 0 5px #10b981; }
-.status-dot.away { background-color: #f59e0b; }
+.status-online::after { background: #10b981; }
+.status-away::after { background: #f59e0b; }
+.status-offline::after { background: #6b7280; }
 
-@media (max-width: 600px) {
-  .list-title { display: none; }
-  .mobile-total-indicator { display: block; }
-  .header-top { justify-content: space-between; }
-  .desktop-text { display: none; }
-  .mobile-icon { display: inline; }
-  .action-btn { padding: 0.5rem; min-width: 40px; height: 40px; font-size: 1.2rem; }
-}
-
-.header-nav { display: flex; gap: 0.5rem; border-bottom: 1px solid var(--border-color); overflow-x: auto; }
+/* Navigation */
+.header-nav { display: flex; gap: 2rem; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 0.5rem; }
 .nav-tab {
-  padding: 0.5rem 1rem; font-weight: 600; color: var(--text-light);
-  text-decoration: none; cursor: pointer; border-bottom: 3px solid transparent;
-  transition: all 0.2s ease; white-space: nowrap;
+  position: relative; padding: 1rem 0.5rem; color: var(--text-light);
+  font-weight: 600; font-size: 0.95rem; text-decoration: none; cursor: pointer;
+  transition: color 0.3s; display: flex; align-items: center; gap: 6px;
 }
-.nav-tab:hover { color: var(--secondary-color); }
-.nav-tab.active { color: var(--primary-color); border-bottom-color: var(--primary-color); }
-.nav-tab.disabled { color: var(--border-color); cursor: not-allowed; opacity: 0.5; }
-.back-link { margin-left: auto; color: var(--text-light); opacity: 0.8; }
-.back-link:hover { opacity: 1; color: #fff; }
+.nav-tab:hover { color: #fff; }
+.active-dot {
+  position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 20px; height: 3px; background: var(--primary-color);
+  border-radius: 3px 3px 0 0; box-shadow: 0 -2px 10px var(--primary-color);
+  opacity: 0; transition: opacity 0.3s;
+}
+.nav-tab.active { color: #fff; }
+.nav-tab.active .active-dot { opacity: 1; }
+
+.badge-soon { font-size: 0.6rem; background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 6px; color: var(--text-light); }
+.nav-link-back { margin-left: auto; align-self: center; font-size: 0.9rem; color: var(--text-light); cursor: pointer; transition: all 0.2s; }
+.nav-link-back:hover { color: #fff; transform: translateX(-4px); }
+
+@media (max-width: 768px) {
+  .user-header { padding: 1.2rem; margin-bottom: 1.5rem; }
+  .header-top { display: grid; grid-template-areas: "user actions" "title title"; gap: 1rem; }
+  .user-block { grid-area: user; }
+  .header-actions { grid-area: actions; justify-content: flex-end; }
+  .title-block { grid-area: title; margin-top: 0.5rem; }
+  .list-title { font-size: 1.4rem; }
+  .header-nav { gap: 1rem; font-size: 0.9rem; justify-content: space-between; }
+  .nav-link-back { display: none; }
+}
 </style>

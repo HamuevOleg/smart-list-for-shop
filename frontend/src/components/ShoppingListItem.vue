@@ -10,64 +10,70 @@
     }"
     @click="store.startViewing(item)"
   >
-    <div class="item-controls">
-      <template v-if="item.syncStatus !== 'pending'">
-        <button @click.stop="store.startEditing(item)" class="btn-icon" title="Edit">✎</button>
-        <button @click.stop="store.removeItem(item.id)" class="btn-icon btn-delete" title="Delete">🗑</button>
-      </template>
-      <span v-else class="pending-badge" title="Saved locally. Waiting for connection...">
-        ⏳ Waiting
-      </span>
+    <div v-if="item.syncStatus === 'pending'" class="pending-overlay">
+      <span>⏳ Syncing...</span>
     </div>
 
-    <div class="item-checkbox-wrapper" @click.stop>
-      <input
-        type="checkbox"
-        :checked="item.completed"
-        @change="store.toggleItem(item.id)"
-        class="item-checkbox"
-      />
+    <div class="item-actions">
+      <button @click.stop="store.startEditing(item)" class="action-btn edit" title="Edit">
+        ✏️
+      </button>
+      <button @click.stop="store.removeItem(item.id)" class="action-btn delete" title="Delete">
+        🗑️
+      </button>
     </div>
 
-    <div class="card-content">
-      <img
-        v-if="item.imageUrl"
-        :src="item.imageUrl"
-        :alt="item.name"
-        class="item-image"
-      />
-      <div v-else class="photo-placeholder">
-        <span>{{ photoPlaceholder }}</span>
+    <div class="checkbox-area" @click.stop>
+      <label class="custom-checkbox">
+        <input
+          type="checkbox"
+          :checked="item.completed"
+          @change="store.toggleItem(item.id)"
+        />
+        <span class="checkmark"></span>
+      </label>
+    </div>
+
+    <div class="card-body">
+      <div class="image-wrapper">
+        <img
+          v-if="item.imageUrl"
+          :src="item.imageUrl"
+          alt="item"
+          loading="lazy"
+          class="product-img"
+        />
+        <div v-else class="placeholder-img">
+          {{ (item.name || '?').substring(0, 2).toUpperCase() }}
+        </div>
       </div>
 
-      <div class="item-details">
-        <span class="item-name">{{ item.name }}</span>
-        <span class="item-quantity">{{ item.quantity }} {{ item.unit }}</span>
-
-        <p v-if="item.comment" class="item-comment">
-          {{ item.comment }}
-        </p>
-
-        <div class="user-badges">
-          <div class="user-badge added" v-if="item.addedBy && !item.completed">
-            <span class="badge-avatar">
-              <img v-if="isImage(item.addedByAvatar)" :src="item.addedByAvatar" class="mini-avatar-img" />
-              <span v-else>{{ item.addedByAvatar || '👤' }}</span>
-            </span>
-            <span class="badge-name">{{ item.addedBy }}</span>
-          </div>
+      <div class="info-column">
+        <div class="header-row">
+          <h3 class="item-name">{{ item.name }}</h3>
+          <span class="item-qty">{{ item.quantity }} {{ item.unit }}</span>
         </div>
 
-        <div class="item-prices" v-if="hasPrices">
-          <span v-if="item.priceStore1" class="price store1">
-            M: {{ item.priceStore1 }}
-          </span>
-          <span v-if="item.priceStore2" class="price store2">
-            L: {{ item.priceStore2 }}
-          </span>
-          <span v-if="item.userPrice" class="price user">
-            Me: {{ item.userPrice }}
-          </span>
+        <p v-if="item.comment" class="item-comment">
+          “{{ item.comment }}”
+        </p>
+
+        <div class="footer-row">
+          <div class="prices-badges" v-if="hasPrices">
+            <span v-if="item.priceStore1" class="price-tag metro">M: {{ item.priceStore1 }}</span>
+            <span v-if="item.priceStore2" class="price-tag linella">L: {{ item.priceStore2 }}</span>
+            <span v-if="item.userPrice" class="price-tag user">Me: {{ item.userPrice }}</span>
+          </div>
+
+          <div class="user-badge" v-if="item.addedBy && !item.completed">
+            <img
+              v-if="isImage(item.addedByAvatar)"
+              :src="item.addedByAvatar"
+              class="user-avatar"
+            />
+            <span v-else class="user-emoji">{{ item.addedByAvatar }}</span>
+            <span class="user-name">{{ item.addedBy }}</span>
+          </div>
         </div>
       </div>
     </div>
@@ -84,218 +90,174 @@ const props = defineProps({
 })
 
 const store = useListStore()
-const { magneticStyle, onMouseMove, onMouseLeave } = useMagnetic(0.2)
-
-const photoPlaceholder = computed(() => {
-  return props.item.name ? props.item.name.substring(0, 2).toUpperCase() : '??'
-})
+// Магнитный эффект делаем слабее, чтобы не раздражал
+const { magneticStyle, onMouseMove, onMouseLeave } = useMagnetic(0.15)
 
 const hasPrices = computed(() => {
   return props.item.priceStore1 || props.item.priceStore2 || props.item.userPrice
 })
 
-const isImage = (avatarString) => {
-  if (!avatarString) return false
-  return avatarString.startsWith('http') || avatarString.startsWith('data:image')
-}
+const isImage = (str) => str && (str.startsWith('http') || str.startsWith('data:image'))
 </script>
 
 <style scoped>
 .list-item-card {
   position: relative;
-  background: var(--list-item-color);
-  color: #e2e8f0;
-  padding: 1.25rem;
-  border-radius: var(--border-radius);
-  box-shadow: var(--shadow);
-  transition: transform 0.3s ease-out, opacity 0.3s;
+  /* Темный фон карточки с легкой прозрачностью */
+  background: rgba(30, 30, 46, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 1rem;
+  transition: transform 0.2s ease, background 0.3s ease;
   cursor: pointer;
-  border: 1px solid transparent;
-}
-
-/* Styles for pending sync state */
-.list-item-card.pending {
-  opacity: 0.85;
-  border-color: rgba(251, 191, 36, 0.5); /* Yellow border */
-  background: linear-gradient(145deg, var(--list-item-color), rgba(251, 191, 36, 0.05));
-}
-
-.pending-badge {
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: #fbbf24; /* Yellow text */
-  background: rgba(0, 0, 0, 0.4);
-  padding: 4px 8px;
-  border-radius: 6px;
-  border: 1px solid rgba(251, 191, 36, 0.3);
-  white-space: nowrap;
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0% { opacity: 0.7; }
-  50% { opacity: 1; }
-  100% { opacity: 0.7; }
+  overflow: hidden;
 }
 
 .list-item-card:hover {
-  transform: translateY(-4px);
+  transform: translateY(-2px);
+  background: rgba(40, 40, 60, 0.8);
+  border-color: rgba(255, 255, 255, 0.15);
 }
 
+/* COMPLETED STATE */
 .list-item-card.completed {
   opacity: 0.6;
-  background: #334155;
-  cursor: default;
+  background: rgba(20, 20, 30, 0.5);
   border-color: transparent;
-}
-.list-item-card.completed:hover {
-  transform: none;
 }
 .list-item-card.completed .item-name {
   text-decoration: line-through;
+  color: #6b7280;
+}
+.list-item-card.completed .product-img {
+  filter: grayscale(100%);
 }
 
-.item-checkbox-wrapper {
+/* PENDING STATE */
+.list-item-card.pending {
+  border: 1px solid #f59e0b;
+}
+.pending-overlay {
+  position: absolute; top: 5px; right: 5px;
+  background: #f59e0b; color: #000;
+  font-size: 0.7rem; font-weight: bold;
+  padding: 2px 6px; border-radius: 6px; z-index: 10;
+}
+
+/* CHECKBOX */
+.checkbox-area {
   position: absolute;
-  top: 1rem;
   left: 1rem;
-  cursor: pointer;
-  z-index: 2;
-}
-.item-checkbox {
-  width: 20px;
-  height: 20px;
-  cursor: pointer;
-  accent-color: var(--primary-color);
-  background-color: #475569;
-  border-radius: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 5;
 }
 
-.item-controls {
-  position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  display: flex;
-  gap: 0.25rem;
-  opacity: 0.7;
-  transition: opacity 0.2s ease;
-  z-index: 2;
-  align-items: center;
+.custom-checkbox {
+  display: block; position: relative;
+  padding-left: 24px; cursor: pointer; user-select: none;
 }
-.list-item-card:hover .item-controls {
-  opacity: 1;
+.custom-checkbox input { position: absolute; opacity: 0; cursor: pointer; height: 0; width: 0; }
+.checkmark {
+  position: absolute; top: -10px; left: 0;
+  height: 22px; width: 22px;
+  background-color: rgba(255,255,255,0.1);
+  border: 2px solid rgba(255,255,255,0.3);
+  border-radius: 6px; transition: all 0.2s;
 }
-
-.btn-icon {
-  background: rgba(255, 255, 255, 0.1);
-  border: none;
-  cursor: pointer;
-  color: #e2e8f0;
-  padding: 0.4rem;
-  border-radius: 50%;
-  transition: all 0.2s ease;
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.btn-icon:hover {
+.list-item-card:hover .checkmark { border-color: var(--primary-color); }
+.custom-checkbox input:checked ~ .checkmark {
   background-color: var(--primary-color);
-  color: white;
+  border-color: var(--primary-color);
 }
-.btn-delete:hover {
-  background-color: #ef4444;
-  color: white;
+.checkmark:after {
+  content: ""; position: absolute; display: none;
 }
-
-.card-content {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-left: 1.75rem;
-}
-
-.item-image,
-.photo-placeholder {
-  width: 50px;
-  height: 50px;
-  flex-shrink: 0;
-  border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, 0.5);
-}
-
-.item-image {
-  object-fit: cover;
-  background-color: #475569;
-}
-
-.photo-placeholder {
-  background-color: var(--primary-color);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.1rem;
-  font-weight: 600;
-}
-
-.item-details {
-  flex-grow: 1;
-  min-width: 0;
-}
-
-.item-name {
-  font-size: 1.15rem;
-  font-weight: 600;
-  color: #fff;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.custom-checkbox input:checked ~ .checkmark:after {
   display: block;
+  left: 6px; top: 2px;
+  width: 5px; height: 10px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
 }
 
-.item-quantity {
-  font-size: 0.9rem;
-  color: #94a3b8;
+/* ACTIONS (HOVER) */
+.item-actions {
+  position: absolute; top: 0.5rem; right: 0.5rem;
+  display: flex; gap: 0.5rem; opacity: 0;
+  transition: opacity 0.2s; z-index: 10;
 }
+.list-item-card:hover .item-actions { opacity: 1; }
+
+/* На мобильных кнопки всегда видны чуть-чуть или лучше сделать свайп,
+   но пока оставим просто видными для тача */
+@media (hover: none) {
+  .item-actions { opacity: 1; top: 0.8rem; right: 0.8rem; }
+}
+
+.action-btn {
+  background: rgba(0,0,0,0.5); border: none; border-radius: 50%;
+  width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 0.9rem; color: #fff;
+  transition: transform 0.2s;
+}
+.action-btn:hover { transform: scale(1.1); background: var(--primary-color); }
+.action-btn.delete:hover { background: #ef4444; }
+
+/* BODY LAYOUT */
+.card-body {
+  display: flex; align-items: center; gap: 1rem;
+  padding-left: 2.2rem; /* Место под чекбокс */
+}
+
+.image-wrapper {
+  width: 56px; height: 56px; flex-shrink: 0;
+  border-radius: 12px; overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: #000;
+}
+.product-img { width: 100%; height: 100%; object-fit: cover; }
+.placeholder-img {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, var(--primary-color), #4f46e5);
+  font-weight: 800; color: #fff; font-size: 1.2rem;
+}
+
+.info-column { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+
+.header-row { display: flex; justify-content: space-between; align-items: flex-start; }
+.item-name {
+  margin: 0; font-size: 1.1rem; color: #fff; font-weight: 600;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  max-width: 80%;
+}
+.item-qty { font-size: 0.9rem; color: var(--secondary-color); font-weight: 700; white-space: nowrap; }
 
 .item-comment {
-  font-size: 0.85rem;
-  margin: 0.25rem 0 0 0;
-  font-style: italic;
-  color: #94a3b8;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  margin: 2px 0 6px 0; font-size: 0.85rem; color: rgba(255,255,255,0.6);
+  font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
-.user-badges {
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 0.3rem;
+.footer-row { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 4px; }
+
+.prices-badges { display: flex; gap: 6px; flex-wrap: wrap; }
+.price-tag {
+  font-size: 0.75rem; padding: 2px 6px; border-radius: 6px;
+  font-weight: 600; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
 }
+.price-tag.metro { color: #60a5fa; border-color: rgba(96, 165, 250, 0.3); }
+.price-tag.linella { color: #f59e0b; border-color: rgba(245, 158, 11, 0.3); }
+.price-tag.user { color: #34d399; border-color: rgba(52, 211, 153, 0.3); }
+
 .user-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 0.7rem;
-  padding: 1px 6px;
-  border-radius: 8px;
-  background: rgba(255,255,255,0.1);
-  color: var(--text-light);
+  display: flex; align-items: center; gap: 4px;
+  background: rgba(0,0,0,0.3); padding: 2px 8px 2px 2px;
+  border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);
 }
-.mini-avatar-img { width: 14px; height: 14px; border-radius: 50%; object-fit: cover; }
-
-.item-prices {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.6rem;
-  margin-top: 0.5rem;
-  font-size: 0.8rem;
-  font-weight: 600;
-}
-.price.store1 { color: #60a5fa; }
-.price.store2 { color: #f59e0b; }
-.price.user { color: #34d399; }
+.user-avatar { width: 16px; height: 16px; border-radius: 50%; object-fit: cover; }
+.user-emoji { font-size: 0.8rem; line-height: 1; }
+.user-name { font-size: 0.7rem; color: rgba(255,255,255,0.8); }
 </style>
