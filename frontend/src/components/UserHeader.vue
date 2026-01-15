@@ -144,7 +144,7 @@ const getStatusText = (lastSeenStr) => {
 .avatar-img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 2px solid #1a1a24; background: #000; }
 .user-info { display: flex; flex-direction: column; }
 .username { font-weight: 700; font-size: 1.1rem; color: #fff; line-height: 1.2; }
-.link-edit { background: none; border: none; padding: 0; color: var(--text-light); font-size: 0.75rem; text-align: left; cursor: pointer; }
+.link-edit { background: none; border: none; padding: 0; color: rgba(255, 255, 255, 0.6); font-size: 0.75rem; text-align: left; cursor: pointer; transition: color 0.2s; }
 .link-edit:hover { color: var(--primary-color); }
 
 /* Title */
@@ -172,7 +172,7 @@ const getStatusText = (lastSeenStr) => {
   display: flex; align-items: center; gap: 12px; margin-bottom: 1.5rem;
   background: rgba(0, 0, 0, 0.2); padding: 8px 16px; border-radius: 16px; width: fit-content;
 }
-.bar-label { font-size: 0.75rem; color: var(--text-light); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+.bar-label { font-size: 0.75rem; color: rgba(255, 255, 255, 0.7); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
 .avatars-stack { display: flex; align-items: center; }
 .stack-item {
   width: 32px; height: 32px; border-radius: 50%;
@@ -191,25 +191,73 @@ const getStatusText = (lastSeenStr) => {
 .status-offline::after { background: #6b7280; }
 
 /* Navigation */
-.header-nav { display: flex; gap: 2rem; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 0.5rem; }
-.nav-tab {
-  position: relative; padding: 1rem 0.5rem; color: var(--text-light);
-  font-weight: 600; font-size: 0.95rem; text-decoration: none; cursor: pointer;
-  transition: color 0.3s; display: flex; align-items: center; gap: 6px;
+.header-nav {
+  display: flex;
+  gap: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  padding-top: 0.5rem;
+  padding-bottom: 0.75rem;
+  align-items: center;
 }
-.nav-tab:hover { color: #fff; }
+
+.nav-tab {
+  position: relative;
+  padding: 1rem 0.5rem;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.nav-tab:hover { color: rgba(255, 255, 255, 0.9); }
 .active-dot {
-  position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
-  width: 20px; height: 3px; background: var(--primary-color);
-  border-radius: 3px 3px 0 0; box-shadow: 0 -2px 10px var(--primary-color);
-  opacity: 0; transition: opacity 0.3s;
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 20px;
+  height: 3px;
+  background: var(--primary-color);
+  border-radius: 3px 3px 0 0;
+  box-shadow: 0 -2px 10px var(--primary-color);
+  opacity: 0;
+  transition: opacity 0.3s;
 }
 .nav-tab.active { color: #fff; }
 .nav-tab.active .active-dot { opacity: 1; }
+.nav-tab.disabled { opacity: 0.5; cursor: default; }
 
-.badge-soon { font-size: 0.6rem; background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 6px; color: var(--text-light); }
-.nav-link-back { margin-left: auto; align-self: center; font-size: 0.9rem; color: var(--text-light); cursor: pointer; transition: all 0.2s; }
-.nav-link-back:hover { color: #fff; transform: translateX(-4px); }
+.badge-soon {
+  font-size: 0.6rem;
+  background: rgba(255,255,255,0.15);
+  padding: 2px 6px;
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.nav-link-back {
+  margin-left: auto;
+  align-self: center;
+  font-size: 0.95rem;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  padding: 0.8rem 1.25rem;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  text-decoration: none;
+}
+.nav-link-back:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateX(-4px);
+}
 
 @media (max-width: 768px) {
   .user-header { padding: 1.2rem; margin-bottom: 1.5rem; }
@@ -218,7 +266,33 @@ const getStatusText = (lastSeenStr) => {
   .header-actions { grid-area: actions; justify-content: flex-end; }
   .title-block { grid-area: title; margin-top: 0.5rem; }
   .list-title { font-size: 1.4rem; }
-  .header-nav { gap: 1rem; font-size: 0.9rem; justify-content: space-between; }
-  .nav-link-back { display: none; }
+
+  .header-nav {
+    gap: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    border-top: none;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .nav-tab {
+    display: none;
+  }
+
+  .nav-link-back {
+    width: 100%;
+    margin: 0;
+    margin-top: 1rem;
+    text-align: center;
+    padding: 1rem;
+    font-size: 1rem;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+  }
+
+  .nav-link-back:hover {
+    transform: none;
+  }
 }
 </style>

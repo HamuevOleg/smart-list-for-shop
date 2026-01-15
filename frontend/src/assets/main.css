@@ -1,118 +1,43 @@
+/* src/assets/main.css */
 @import url('https://fonts.googleapis.com/css2?family=Kumbh+Sans:wght@100..900&display=swap');
 
 :root {
-  /* === GALAXY THEME (DARK MODE) === */
-
-  /* Основной фон (должен быть темным для Canvas) */
   --bg-color: #060010;
+  /* Усиливаем контраст карточек */
+  --card-color: rgba(20, 20, 35, 0.8);
 
-  /* Цвет карточек (эффект стекла) */
-  --card-color: rgba(30, 30, 46, 0.75);
-
-  /* Акцентные цвета */
-  --primary-color: #ff3366;     /* Неоновый розовый */
+  --primary-color: #ff3366;
   --primary-hover: #ff5577;
-  --secondary-color: #60a5fa;   /* Неоновый голубой */
+  --secondary-color: #60a5fa;
 
-  /* Текст */
-  --text-color: #ffffff;        /* Белый текст */
-  --text-light: #9ca3af;        /* Светло-серый текст */
+  /* ИСПРАВЛЕНО: Теперь текст белый и светло-голубой */
+  --text-color: #ffffff;
+  --text-light: #cbd5e1;
 
-  /* Элементы интерфейса */
-  --bg-input: rgba(0, 0, 0, 0.4); /* Темный полупрозрачный фон для инпутов */
-  --bg-surface-hover: rgba(255, 255, 255, 0.1);
-  --list-item-color: rgba(30, 30, 50, 0.6);
-
-  /* Границы и тени */
-  --border-color: rgba(255, 255, 255, 0.15);
+  --bg-input: rgba(0, 0, 0, 0.5);
+  --border-color: rgba(255, 255, 255, 0.2);
   --border-radius: 16px;
-  --shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-}
-
-/* === БАЗОВЫЕ НАСТРОЙКИ === */
-
-html {
-  background-color: var(--bg-color); /* Подложка на случай долгой загрузки Canvas */
 }
 
 body {
   font-family: "Kumbh Sans", sans-serif;
-  /* ВАЖНО: Прозрачный фон body, чтобы просвечивал canvas со звездами */
   background-color: transparent !important;
   color: var(--text-color);
   margin: 0;
-  line-height: 1.6;
-  min-height: 100vh;
-  overflow-x: hidden;
-  -webkit-font-smoothing: antialiased;
+  /* Добавляем тень, чтобы буквы не сливались со звездами */
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
 }
 
-/* Сброс стилей для форм */
-button, input, select, textarea {
-  font-family: inherit;
-}
-
-/* === ГЛОБАЛЬНЫЕ КОМПОНЕНТЫ === */
-/* Эти классы используются во многих компонентах, если у них нет scoped стилей */
-
-/* Кнопки */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  border-radius: 12px;
-  padding: 0.75em 1.5em;
-  font-size: 0.95rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-}
-
-.btn-primary {
-  background: linear-gradient(135deg, var(--primary-color), #e91e63);
-  color: white;
-  box-shadow: 0 4px 15px rgba(255, 51, 102, 0.4);
-}
-.btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(255, 51, 102, 0.6);
-}
-.btn-primary:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.btn-secondary {
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
-  border: 1px solid var(--border-color);
-}
-.btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.15);
-}
-
-/* Поля ввода (Инпуты) */
+/* Обновляем инпуты, чтобы текст внутри был ярким */
 .form-input {
   width: 100%;
   padding: 12px;
   border: 1px solid var(--border-color);
   border-radius: 12px;
-  font-size: 1rem;
-  box-sizing: border-box;
   background-color: var(--bg-input);
-  color: #fff;
+  color: #ffffff;
   outline: none;
-  transition: border-color 0.2s, background 0.2s;
 }
-
 .form-input::placeholder {
-  color: rgba(255, 255, 255, 0.4);
-}
-
-.form-input:focus {
-  border-color: var(--primary-color);
-  background-color: rgba(0, 0, 0, 0.6);
+  color: rgba(255, 255, 255, 0.5);
 }
